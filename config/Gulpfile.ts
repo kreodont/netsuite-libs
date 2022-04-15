@@ -51,15 +51,18 @@ class ScriptFile {
         return scriptPortletTypeArray[1];
     }
 
-    static mapReduceScheduledDeployment(scriptName: string): string {
+    static mapReduceScheduledDeployment(
+        scriptName: string,
+        deploymentNumber: number,
+    ): string {
         // status TESTING is not an error, the RELEASED raising an error
         return `
             <scriptdeployment scriptid="${scriptName.replace(
                 "customscript",
                 "customdeploy",
-            )}">
+            )}_${deploymentNumber}">
                 <status>TESTING</status>
-                <title>${scriptName}</title>
+                <title>${scriptName}_${deploymentNumber}</title>
                 <isdeployed>T</isdeployed>
                 <loglevel>DEBUG</loglevel>
                 <allroles>T</allroles>
@@ -189,7 +192,12 @@ class ScriptFile {
                 this.scriptType(),
             ) !== -1
         ) {
-            outputText += ScriptFile.mapReduceScheduledDeployment(this.name());
+            for (let i = 0; i < 10; i++) {
+                outputText += ScriptFile.mapReduceScheduledDeployment(
+                    this.name(),
+                    i,
+                );
+            }
         }
         if (this.scriptType() === "Suitelet") {
             outputText += ScriptFile.suiteletDeployment(this.name());
@@ -266,14 +274,6 @@ function writeScriptConfigurationFiles() {
         exec(`suitecloud project:adddependencies`, function () {});
     });
     return inputStream;
-}
-
-function checkCustomFieldsInManifest() {
-    const inputStream = src([`./*.ts`]);
-    inputStream.on("data", (file: { contents: Buffer; history: string[] }) => {
-        const fileContent: string = file.contents.toString("utf-8");
-        log(fileContent);
-    });
 }
 
 function transpileLibs() {
