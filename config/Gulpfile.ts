@@ -122,6 +122,9 @@ class ScriptFile {
     }
 
     xmlText(): string {
+        /*
+        For script file, create an XML for deployment
+         */
         const deployments = this.getDeployments();
         if (
             deployments.length === 0 &&
@@ -263,6 +266,14 @@ function writeScriptConfigurationFiles() {
         exec(`suitecloud project:adddependencies`, function () {});
     });
     return inputStream;
+}
+
+function checkCustomFieldsInManifest() {
+    const inputStream = src([`./*.ts`]);
+    inputStream.on("data", (file: { contents: Buffer; history: string[] }) => {
+        const fileContent: string = file.contents.toString("utf-8");
+        log(fileContent);
+    });
 }
 
 function transpileLibs() {
