@@ -27,6 +27,20 @@ export function printLogPartial(
     };
 }
 
+export function chunks<T>(inputArray: Array<T>, chunkSize: number): Array<T>[] {
+    /*
+    Splits an array to chunks of fixed length
+     */
+    if (chunkSize === 0) {
+        return [];
+    }
+    const outputArray: Array<T>[] = [];
+    for (let i = 0; i < inputArray.length; i += chunkSize) {
+        outputArray.push(inputArray.slice(i, i + chunkSize));
+    }
+    return outputArray;
+}
+
 export function notifyOwner(scriptName: string, errorText: string): void {
     const sql = `select employee.id as owner_id, email as owner_email from script join employee on script.owner = employee.id join File on script.scriptfile = File.id where File.name = '${scriptName}'`;
     const results = getSqlResultAsMap(sql, []);
