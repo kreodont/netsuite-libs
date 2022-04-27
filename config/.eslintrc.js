@@ -24,7 +24,7 @@ module.exports = {
         "no-empty": "warn",
         "no-cond-assign": ["error", "always"],
         "@typescript-eslint/no-unused-vars": "error",
-        "@typescript-eslint/restrict-template-expressions": "warn",
+        "@typescript-eslint/restrict-template-expressions": "off",
 
         "for-direction": "off",
         "no-constant-condition": "off",
