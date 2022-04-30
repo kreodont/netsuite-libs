@@ -250,3 +250,58 @@ export function roundNumber(n: number, digitsAfterComma: number): number {
         Math.pow(10, digitsAfterComma)
     );
 }
+
+export function loadTransactionLineGroup(
+    transactionsIds: number[],
+    logs?: string[],
+): {
+    [lineUniqueId: number]: {
+        groupId: number | null;
+        groupName: string;
+        groupUniqueKey: number | null;
+        itemId: number;
+        itemName: string;
+    };
+} {
+    /*
+    For transactions list specified, loads all items with Groups information (groupId and name if line belongs to a group
+     */
+    const outputDict: {
+        [lineUniqueId: number]: {
+            groupId: number | null;
+            groupName: string;
+            groupUniqueKey: number | null;
+            itemId: number;
+            itemName: string;
+        };
+    } = {};
+    for (const chunk of chunks(transactionsIds, 1000)) {
+        const sql = `WITH Framed AS ( SELECT uniquekey, item, BUILTIN.DF(item) as item_name, itemtype, BUILTIN.DF(transaction) as tr_name, linesequencenumber, SUM(CASE WHEN itemtype IN ('Group', 'EndGroup') THEN 1 ELSE 0 END) OVER (ORDER BY BUILTIN.DF(transaction), linesequencenumber) AS frame_id FROM transactionline where transaction in (${chunk.join(
+            ',',
+        )}) and mainline = 'F' and taxline = 'F' ) SELECT linesequencenumber, uniquekey, item, item_name, tr_name, MAX(CASE WHEN itemtype = 'Group' THEN uniquekey END) OVER (PARTITION BY frame_id) as group_unique_key, MAX(CASE WHEN itemtype = 'Group' THEN item_name END) OVER (PARTITION BY frame_id) as group_name, MAX(CASE WHEN itemtype = 'Group' THEN item END) OVER (PARTITION BY frame_id) as group_id FROM Framed ORDER BY tr_name, linesequencenumber`;
+        logs?.push(sql);
+        const results = getSqlResultAsMap(sql, logs) as {
+            linesequencenumber: string;
+            uniquekey: string;
+            item: number;
+            item_name: string;
+            tr_name: string;
+            group_unique_key: string;
+            group_name: string;
+            group_id: string;
+        }[];
+        for (const r of results) {
+            outputDict[Number(r.uniquekey)] = {
+                groupId: r.group_id === 'null' ? null : Number(r.group_id),
+                groupName: r.group_name === 'null' ? '' : r.group_name,
+                itemId: Number(r.item),
+                groupUniqueKey:
+                    r.group_unique_key === 'null'
+                        ? null
+                        : Number(r.group_unique_key),
+                itemName: r.item_name,
+            };
+        }
+    }
+    return outputDict;
+}
