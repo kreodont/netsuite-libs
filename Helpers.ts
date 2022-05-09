@@ -196,7 +196,7 @@ export function adjustQuantity(
 
 export function getSqlResultAsMap(
     sqlString: string,
-    logs?: string[],
+    logs: string[],
 ): TypeForAsMap | undefined {
     try {
         const sqlResults: query.Result[] = getSqlResults(sqlString).results;
@@ -204,7 +204,7 @@ export function getSqlResultAsMap(
             return getValues(sqlResults);
         }
     } catch (e) {
-        logs?.push(e);
+        logs.push(e);
         return undefined;
     }
     return [];
@@ -285,7 +285,7 @@ export function loadTransactionLineGroup(
             ',',
         )}) and mainline = 'F' and taxline = 'F' ) SELECT linesequencenumber, uniquekey, item, item_name, tr_name, MAX(CASE WHEN itemtype = 'Group' THEN uniquekey END) OVER (PARTITION BY frame_id) as group_unique_key, MAX(CASE WHEN itemtype = 'Group' THEN item_name END) OVER (PARTITION BY frame_id) as group_name, MAX(CASE WHEN itemtype = 'Group' THEN item END) OVER (PARTITION BY frame_id) as group_id FROM Framed ORDER BY tr_name, linesequencenumber`;
         logs?.push(sql);
-        const results = getSqlResultAsMap(sql, logs) as {
+        const results = getSqlResultAsMap(sql, logs ? logs : []) as {
             linesequencenumber: string;
             uniquekey: string;
             item: number;
