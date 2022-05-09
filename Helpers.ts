@@ -44,6 +44,9 @@ export function chunks<T>(inputArray: Array<T>, chunkSize: number): Array<T>[] {
 export function notifyOwner(scriptName: string, errorText: string): void {
     const sql = `select employee.id as owner_id, email as owner_email from script join employee on script.owner = employee.id join File on script.scriptfile = File.id where File.name = '${scriptName}'`;
     const results = getSqlResultAsMap(sql, []);
+    if (results === undefined) {
+        return;
+    }
     if (results.length < 1) {
         return;
     }
@@ -190,10 +193,11 @@ export function adjustQuantity(
     }
     return [];
 }
+
 export function getSqlResultAsMap(
     sqlString: string,
     logs?: string[],
-): TypeForAsMap {
+): TypeForAsMap | undefined {
     try {
         const sqlResults: query.Result[] = getSqlResults(sqlString).results;
         if (sqlResults) {
@@ -201,6 +205,7 @@ export function getSqlResultAsMap(
         }
     } catch (e) {
         logs?.push(e);
+        return undefined;
     }
     return [];
 }
