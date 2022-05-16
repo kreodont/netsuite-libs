@@ -165,7 +165,7 @@ class ScriptFile {
                                 <isdeployed>T</isdeployed>
                                 <loglevel>DEBUG</loglevel>
                                 <allroles>T</allroles>
-                                <executioncontext>USERINTERFACE</executioncontext>
+                                <executioncontext>USERINTERFACE|WEBSERVICES|CSVIMPORT</executioncontext>
                                 <recordtype>${deployment}</recordtype>
                                 <runasrole>ADMINISTRATOR</runasrole>
                                 <status>${deploymentStatus()}</status>
