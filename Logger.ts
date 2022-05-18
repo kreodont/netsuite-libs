@@ -108,8 +108,8 @@ function stackParseUserEvent(stack: string[]): SimpleStack {
             if (!words || words.length < 4) {
                 return stackToReturn;
             }
-            stackToReturn.functionName = words[1];
-            stackToReturn.lineNum = Number(words[3]);
+            stackToReturn.functionName = words[1].replace(/at Object./, '');
+            stackToReturn.lineNum = Number(words[3].split(':')[0]);
             stackToReturn.found = true;
             return stackToReturn;
         }
