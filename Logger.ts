@@ -86,7 +86,11 @@ function stackParseUserEvent(stack: string[]): SimpleStack {
     if (stack.length < 2) {
         return stackToReturn;
     }
-    const words = /[^/]*$/.exec(stack[stack.length - 2]);
+    const oldStackIndex = /[^/]*$/.exec(stack[stack.length - 2]);
+    const newStackIndex = /[^/]*$/.exec(stack[stack.length - 1]);
+
+    const words = stack.length > 5 ? oldStackIndex : newStackIndex;
+    //const words = /[^/]*$/.exec(stack[stack.length - 2]);
     // finding script name
     if (!words || words.length < 1) {
         stackToReturn.scriptName = '?';
