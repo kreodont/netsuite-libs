@@ -16,7 +16,7 @@ export class KitTemplate implements IKit {
     scriptErrors: string[] = [];
     throwException = '';
     exitImmediately = false;
-    log(text: string) {
+    log(text: string): void {
         this._logs.push(text);
     }
 }
@@ -71,7 +71,7 @@ export class StepsRunner {
                 for (const logStr of kit._logs) {
                     log(logStr, this.logger.header);
                 }
-                log(e, this.logger.header, false, error);
+                log(e as string, this.logger.header, false, error);
                 log(
                     surroundTextWithDashes(
                         `Script "${this.logger.scriptName}" stopped due to errors`,
@@ -80,7 +80,7 @@ export class StepsRunner {
                     true,
                     error,
                 );
-                notifyOwner(this.logger.scriptName, e);
+                notifyOwner(this.logger.scriptName, e as string);
                 return kit;
             }
 

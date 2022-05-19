@@ -204,7 +204,7 @@ export function getSqlResultAsMap(
             return getValues(sqlResults);
         }
     } catch (e) {
-        logs.push(e);
+        logs.push(e as string);
         return undefined;
     }
     return [];
