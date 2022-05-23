@@ -58,7 +58,7 @@ class ScriptFile {
                 "customscript",
                 "customdeploy",
             )}_${deploymentNumber}">
-                <status>TESTING</status>
+                <status>${deploymentStatus()}</status>
                 <title>${scriptName}_${deploymentNumber}</title>
                 <isdeployed>T</isdeployed>
                 <loglevel>DEBUG</loglevel>
@@ -73,7 +73,7 @@ class ScriptFile {
                 "customscript",
                 "customdeploy",
             )}">
-                <status>RELEASED</status>
+                <status>${deploymentStatus()}</status>
                 <title>${scriptName}</title>
                 <isdeployed>T</isdeployed>
                 <loglevel>DEBUG</loglevel>
@@ -234,12 +234,17 @@ function transpile() {
         .on("data", (file: typeof VinylFile) => {
             const re = /\* @NScriptType (.+)/;
             let scriptName = "customscript_";
-            log(file.basename);
             const isScriptForNS = file.contents
                 ? re.test(file.contents.toString("utf8"))
                 : false;
             if (isScriptForNS && file.basename !== "Gulpfile.js") {
-                scriptName += file.basename;
+                if (file.basename.indexOf(scriptName) === 0) {
+                    scriptName = file.basename;
+                } else {
+                    scriptName += file.basename;
+                }
+                scriptName = scriptName.replace("__", "_");
+
                 if (scriptName.length > 40) {
                     const fileType: string = scriptName.slice(
                         scriptName.indexOf("."),
@@ -254,8 +259,8 @@ function transpile() {
                             fileType;
                     }
                 }
+                file.basename = scriptName;
             }
-            file.basename = scriptName;
         })
         .pipe(dest(`${outputDirectory}`));
 }
@@ -360,5 +365,6 @@ exports[buildAndDeployName] = series(
     fixLibraryImports,
     writeScriptConfigurationFiles,
     runTests,
+    deploy,
     deploy,
 );
