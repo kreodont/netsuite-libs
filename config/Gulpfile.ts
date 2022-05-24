@@ -58,7 +58,7 @@ class ScriptFile {
                 "customscript",
                 "customdeploy",
             )}_${deploymentNumber}">
-                <status>${deploymentStatus()}</status>
+                <status>TESTING</status>
                 <title>${scriptName}_${deploymentNumber}</title>
                 <isdeployed>T</isdeployed>
                 <loglevel>DEBUG</loglevel>
