@@ -298,14 +298,6 @@ function deploy(cb: CallableFunction) {
     );
 }
 
-function copyNFTLibs() {
-    log(`Copying NFT to ${outputDirectory}/${dirName}`);
-    return src(
-        `./node_modules/netsuite-fasttrack-toolkit-ss2/dist/NFT-SS2-6.3.0/**`,
-        {},
-    ).pipe(dest(`${outputDirectory}/${dirName}/NFT-SS2-6.3.0/`));
-}
-
 function copyJSLibs() {
     log(
         `Copying all JS from ./node-modules/netsuite-libs/ to ${outputDirectory}/${dirName}`,
@@ -324,7 +316,6 @@ exports[buildName] = series(
     transpile,
     transpileLibs,
     copyJSLibs,
-    copyNFTLibs,
     fixLibraryImports,
     runTests,
 );
@@ -336,7 +327,6 @@ exports[buildAndDeployName] = series(
     transpile,
     transpileLibs,
     copyJSLibs,
-    copyNFTLibs,
     fixLibraryImports,
     writeScriptConfigurationFiles,
     runTests,

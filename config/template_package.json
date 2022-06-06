@@ -45,7 +45,6 @@
     "gulp-jest": "^4.0.4",
     "lodash": "^4.17.19",
     "moment": "^2.24.0",
-    "netsuite-fasttrack-toolkit-ss2": "6.3.0",
     "netsuite-libs": "git+ssh://git@github.com:kreodont/netsuite-libs.git",
     "numeral": "^2.0.6",
     "path": "0.12.7",
