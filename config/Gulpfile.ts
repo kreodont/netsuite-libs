@@ -274,21 +274,7 @@ function transpileLibs() {
         .pipe(tsProject())
         .pipe(dest(`${outputDirectory}/${dirName}`));
 }
-function copyJSLibs() {
-    log(
-        `Copying all JS from ./node-modules/netsuite-libs/ to ${outputDirectory}/${dirName}`,
-    );
-    return src(`./node_modules/netsuite-libs/*.js`, {}).pipe(
-        dest(`${outputDirectory}/${dirName}`),
-    );
-}
-function copyNFTLibs() {
-    log(`Copying NFT to ${outputDirectory}/${dirName}`);
-    return src(
-        `./node_modules/netsuite-fasttrack-toolkit-ss2/dist/NFT-SS2-6.3.0/**`,
-        {},
-    ).pipe(dest(`${outputDirectory}/${dirName}/NFT-SS2-6.3.0/`));
-}
+
 function fixLibraryImports() {
     const folderWithJS = `${outputDirectory}/${dirName}`;
     log(
@@ -351,8 +337,7 @@ function copyJSLibs() {
         dest(`${outputDirectory}/${dirName}`),
     );
 }
-const buildName = `${dirName}_build`;
-const buildAndDeployName = `${dirName}_build_and_deploy`;
+
 checkBranch();
 
 exports[buildName] = series(
