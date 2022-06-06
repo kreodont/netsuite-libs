@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "allowJs": false,
+    "allowJs": true,
     "strictNullChecks": true,
-    "strict": false,
+    "strict": true,
+    "declaration": false,
     "module": "amd",
     "moduleResolution": "node",
     "target": "ES5",
@@ -28,6 +29,6 @@
     }
   },
   "exclude": [
-    "node_modules",  "__mocks__", "__tests__"
+    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts"
   ],
 }

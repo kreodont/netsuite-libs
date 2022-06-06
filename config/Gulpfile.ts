@@ -227,6 +227,7 @@ function cleanScriptsDefinitions() {
 function transpile() {
     const tsProject = ts_compiler.createProject(`./tsconfig.json`, {
         typescript: require("typescript"),
+        declaration: false,
     });
     return tsProject
         .src()
@@ -267,7 +268,7 @@ function transpile() {
 function transpileLibs() {
     const tsProject = ts_compiler.createProject(
         `./node_modules/netsuite-libs/tsconfig.json`,
-        { typescript: require("typescript") },
+        { typescript: require("typescript"), declaration: false },
     );
     return tsProject
         .src()
