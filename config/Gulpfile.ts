@@ -1,4 +1,5 @@
 const { dest, series, src } = require("gulp");
+const { VinylFile } = require("gulp-typescript/release/types");
 const exec = require("child_process").exec;
 const log = require("fancy-log");
 const replace = require("gulp-replace");
@@ -10,6 +11,8 @@ const path = require("path");
 const jestGulp = require("gulp-jest").default;
 const outputDirectory = `./src/FileCabinet/SuiteScripts`;
 const dirName = path.basename(__dirname);
+const buildName = `${dirName}_build`;
+const buildAndDeployName = `${dirName}_build_and_deploy`;
 let globalBranch = "";
 
 function deploymentStatus() {
@@ -18,10 +21,6 @@ function deploymentStatus() {
     }
     return "TESTING";
 }
-function runTests() {
-    return src("./__tests__").pipe(jestGulp());
-}
-
 class ScriptFile {
     content: string;
     fullPath: string;
@@ -29,11 +28,9 @@ class ScriptFile {
         this.content = args.content;
         this.fullPath = args.fullPath;
     }
-
     name(): string {
-        return path.basename(this.fullPath).replace(/\.ts/g, "");
+        return path.basename(this.fullPath).replace(/\.js/g, "");
     }
-
     scriptType(): string {
         const re = /\* @NScriptType (.+)/;
         const scriptTypeArray = re.exec(this.content);
@@ -165,7 +162,7 @@ class ScriptFile {
                                 <isdeployed>T</isdeployed>
                                 <loglevel>DEBUG</loglevel>
                                 <allroles>T</allroles>
-                                <executioncontext>USERINTERFACE|WEBSERVICES|CSVIMPORT</executioncontext>
+                                <executioncontext>USERINTERFACE</executioncontext>
                                 <recordtype>${deployment}</recordtype>
                                 <runasrole>ADMINISTRATOR</runasrole>
                                 <status>${deploymentStatus()}</status>
@@ -221,7 +218,12 @@ function checkBranch() {
         },
     );
 }
-
+function cleanOutput() {
+    return src(`${outputDirectory}/*`).pipe(clean());
+}
+function cleanScriptsDefinitions() {
+    return src(`./src/FileCabinet/Objects/*`).pipe(clean());
+}
 function transpile() {
     const tsProject = ts_compiler.createProject(`./tsconfig.json`, {
         typescript: require("typescript"),
@@ -229,53 +231,39 @@ function transpile() {
     return tsProject
         .src()
         .pipe(tsProject())
+        .on("data", (file: typeof VinylFile) => {
+            const re = /\* @NScriptType (.+)/;
+            let scriptName = "customscript_";
+            const isScriptForNS = file.contents
+                ? re.test(file.contents.toString("utf8"))
+                : false;
+            if (isScriptForNS && file.basename !== "Gulpfile.js") {
+                if (file.basename.indexOf(scriptName) === 0) {
+                    scriptName = file.basename;
+                } else {
+                    scriptName += file.basename;
+                }
+                scriptName = scriptName.replace("__", "_");
+
+                if (scriptName.length > 40) {
+                    const fileType: string = scriptName.slice(
+                        scriptName.indexOf("."),
+                    );
+                    if (scriptName[39 - fileType.length] === "_") {
+                        scriptName =
+                            scriptName.slice(0, 39 - fileType.length) +
+                            fileType;
+                    } else {
+                        scriptName =
+                            scriptName.slice(0, 40 - fileType.length) +
+                            fileType;
+                    }
+                }
+                file.basename = scriptName;
+            }
+        })
         .pipe(dest(`${outputDirectory}`));
 }
-
-function cleanOutput() {
-    return src(`${outputDirectory}/*`).pipe(clean());
-}
-
-function cleanScriptsDefinitions() {
-    return src(`./src/FileCabinet/Objects/customscript_*`).pipe(clean());
-}
-
-function fixLibraryImports() {
-    const folderWithJS = `${outputDirectory}/${dirName}`;
-    log(
-        `Changing imports netsuite-libs/ to ./ in all JS files from folder ${folderWithJS}`,
-    );
-    return src(`${folderWithJS}/*.js`, {})
-        .pipe(replace('"netsuite-libs/', '"./'))
-        .pipe(dest(`${folderWithJS}`));
-}
-
-function writeScriptConfigurationFiles() {
-    const inputStream = src([`./customscript*.ts`]);
-    inputStream.on("data", (file: { contents: Buffer; history: string[] }) => {
-        if (!fs.existsSync("./src/Objects/")) {
-            fs.mkdirSync("./src/Objects/");
-        }
-        const scriptFile = new ScriptFile({
-            content: file.contents.toString("utf8"),
-            fullPath: file.history[0],
-        });
-        log(scriptFile.xmlText());
-
-        fs.writeFile(
-            `./src/Objects/${scriptFile.name()}.xml`,
-            scriptFile.xmlText(),
-            function (err: string) {
-                if (err) return log(err);
-            },
-        );
-    });
-    inputStream.on("end", () => {
-        exec(`suitecloud project:adddependencies`, function () {});
-    });
-    return inputStream;
-}
-
 function transpileLibs() {
     const tsProject = ts_compiler.createProject(
         `./node_modules/netsuite-libs/tsconfig.json`,
@@ -286,7 +274,64 @@ function transpileLibs() {
         .pipe(tsProject())
         .pipe(dest(`${outputDirectory}/${dirName}`));
 }
+function copyJSLibs() {
+    log(
+        `Copying all JS from ./node-modules/netsuite-libs/ to ${outputDirectory}/${dirName}`,
+    );
+    return src(`./node_modules/netsuite-libs/*.js`, {}).pipe(
+        dest(`${outputDirectory}/${dirName}`),
+    );
+}
+function copyNFTLibs() {
+    log(`Copying NFT to ${outputDirectory}/${dirName}`);
+    return src(
+        `./node_modules/netsuite-fasttrack-toolkit-ss2/dist/NFT-SS2-6.3.0/**`,
+        {},
+    ).pipe(dest(`${outputDirectory}/${dirName}/NFT-SS2-6.3.0/`));
+}
+function fixLibraryImports() {
+    const folderWithJS = `${outputDirectory}/${dirName}`;
+    log(
+        `Changing imports netsuite-libs/ to ./ in all JS files from folder ${folderWithJS}`,
+    );
+    return src(`${folderWithJS}/*.js`, {})
+        .pipe(replace('"netsuite-libs/', '"./'))
+        .pipe(dest(`${folderWithJS}`));
+}
+function writeScriptConfigurationFiles() {
+    const inputStream = src([`${outputDirectory}/${dirName}/*.js`]);
+    inputStream.on("data", (file: { contents: Buffer; history: string[] }) => {
+        if (!fs.existsSync("./src/Objects/")) {
+            fs.mkdirSync("./src/Objects/");
+        }
 
+        const scriptFile = new ScriptFile({
+            content: file.contents.toString("utf8"),
+            fullPath: file.history[0],
+        });
+        log(scriptFile.xmlText());
+        const re = /\* @NScriptType (.+)/;
+        const isScriptForNS =
+            re.test(file.contents.toString("utf8")) &&
+            path.basename(file.history[0]) !== "Gulpfile.js";
+        if (isScriptForNS) {
+            fs.writeFile(
+                `./src/Objects/${scriptFile.name()}.xml`,
+                scriptFile.xmlText(),
+                function (err: string) {
+                    if (err) return log(err);
+                },
+            );
+        }
+    });
+    inputStream.on("end", () => {
+        exec(`suitecloud project:adddependencies`, function () {});
+    });
+    return inputStream;
+}
+function runTests() {
+    return src("./__tests__").pipe(jestGulp());
+}
 function deploy(cb: CallableFunction) {
     exec(
         `suitecloud project:deploy`,
