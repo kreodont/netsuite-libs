@@ -21,6 +21,7 @@ function deploymentStatus() {
     }
     return "TESTING";
 }
+
 class ScriptFile {
     content: string;
     fullPath: string;
@@ -218,12 +219,15 @@ function checkBranch() {
         },
     );
 }
+
 function cleanOutput() {
     return src(`${outputDirectory}/*`).pipe(clean());
 }
+
 function cleanScriptsDefinitions() {
     return src(`./src/FileCabinet/Objects/*`).pipe(clean());
 }
+
 function transpile() {
     const tsProject = ts_compiler.createProject(`./tsconfig.json`, {
         typescript: require("typescript"),
@@ -265,6 +269,7 @@ function transpile() {
         })
         .pipe(dest(`${outputDirectory}`));
 }
+
 function transpileLibs() {
     const tsProject = ts_compiler.createProject(
         `./node_modules/netsuite-libs/tsconfig.json`,
@@ -279,12 +284,13 @@ function transpileLibs() {
 function fixLibraryImports() {
     const folderWithJS = `${outputDirectory}/${dirName}`;
     log(
-        `Changing imports netsuite-libs/ to ./ in all JS files from folder ${folderWithJS}`,
+        `Changing imports netsuite-libs/ to ./libs in all JS files from folder ${folderWithJS}`,
     );
     return src(`${folderWithJS}/*.js`, {})
-        .pipe(replace('"netsuite-libs/', '"./'))
+        .pipe(replace('"netsuite-libs/', '"./libs'))
         .pipe(dest(`${folderWithJS}`));
 }
+
 function writeScriptConfigurationFiles() {
     const inputStream = src([`${outputDirectory}/${dirName}/*.js`]);
     inputStream.on("data", (file: { contents: Buffer; history: string[] }) => {
@@ -316,9 +322,11 @@ function writeScriptConfigurationFiles() {
     });
     return inputStream;
 }
+
 function runTests() {
     return src("./__tests__").pipe(jestGulp());
 }
+
 function deploy(cb: CallableFunction) {
     exec(
         `suitecloud project:deploy`,
@@ -332,10 +340,10 @@ function deploy(cb: CallableFunction) {
 
 function copyJSLibs() {
     log(
-        `Copying all JS from ./node-modules/netsuite-libs/ to ${outputDirectory}/${dirName}`,
+        `Copying all JS from ./node-modules/netsuite-libs/ to ${outputDirectory}/${dirName}/libs`,
     );
     return src(`./node_modules/netsuite-libs/*.js`, {}).pipe(
-        dest(`${outputDirectory}/${dirName}`),
+        dest(`${outputDirectory}/${dirName}/libs`),
     );
 }
 

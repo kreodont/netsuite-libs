@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "allowJs": false,
-    "declaration": true,
+    "declaration": false,
     "emitDeclarationOnly": false,
     "strict": true,
     "module": "amd",
@@ -13,7 +13,7 @@
     "experimentalDecorators": true,
     "baseUrl": "./",
     "rootDir": "./",
-    "outDir": "./",
+    "outDir": "./libs",
     "lib": [
       "es5","es2015.promise", "dom", "es6", "dom.iterable"
     ],
