@@ -278,7 +278,7 @@ function transpileLibs() {
     return tsProject
         .src()
         .pipe(tsProject())
-        .pipe(dest(`${outputDirectory}/${dirName}`));
+        .pipe(dest(`${outputDirectory}/${dirName}/libs`));
 }
 
 function fixLibraryImports() {
@@ -287,7 +287,7 @@ function fixLibraryImports() {
         `Changing imports netsuite-libs/ to ./libs in all JS files from folder ${folderWithJS}`,
     );
     return src(`${folderWithJS}/*.js`, {})
-        .pipe(replace('"netsuite-libs/', '"./libs'))
+        .pipe(replace('"netsuite-libs/', '"./libs/'))
         .pipe(dest(`${folderWithJS}`));
 }
 
@@ -342,9 +342,13 @@ function copyJSLibs() {
     log(
         `Copying all JS from ./node-modules/netsuite-libs/ to ${outputDirectory}/${dirName}/libs`,
     );
-    return src(`./node_modules/netsuite-libs/*.js`, {}).pipe(
-        dest(`${outputDirectory}/${dirName}/libs`),
-    );
+    return src(
+        [
+            `./node_modules/netsuite-libs/*.js`,
+            `!./node_modules/netsuite-libs/babel.config.js`,
+        ],
+        {},
+    ).pipe(dest(`${outputDirectory}/${dirName}/libs`));
 }
 
 checkBranch();
