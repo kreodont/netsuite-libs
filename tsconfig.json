@@ -4,7 +4,7 @@
     "declaration": false,
     "emitDeclarationOnly": false,
     "strict": true,
-    "module": "ES2015",
+    "module": "AMD",
     "moduleResolution": "node",
     "target": "ES5",
     "sourceMap": false,

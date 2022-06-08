@@ -2,7 +2,7 @@
   "compilerOptions": {
     "allowJs": true,
     "strictNullChecks": true,
-    "strict": true,
+    "strict": false,
     "declaration": false,
     "module": "amd",
     "moduleResolution": "node",
