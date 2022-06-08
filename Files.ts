@@ -1,4 +1,4 @@
-import file = require('N/file');
+import file from 'N/file';
 import { fetchOneValue, printLogPartial } from './Helpers';
 
 export function writeFileInCurrentDirectory(

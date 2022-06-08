@@ -12,6 +12,8 @@
     "@babel/preset-env": "^7.7.7",
     "@babel/preset-typescript": "^7.7.7",
     "@hitc/netsuite-types": "2020.2.16",
+    "@rollup/plugin-node-resolve": "^13.3.0",
+    "@rollup/plugin-typescript": "^8.3.2",
     "@types/jest": "^27.0.2",
     "@typescript-eslint/eslint-plugin": "4.28.2",
     "@typescript-eslint/parser": "4.28.2",
@@ -32,15 +34,16 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
+    "@rollup/plugin-commonjs": "^22.0.0",
     "core-js": "^3.6.0",
     "moment": "2.29.1",
-    "tsc": "^2.0.3"
+    "tsc": "^2.0.3",
+    "sweetalert2": "^9.5.3",
+    "ts-serializable": "^2.0.64",
+    "lodash": "^4.17.19",
+    "reflect-metadata": "^0.1.13"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
+
   "lint-staged": {
     "*.ts": [
       "prettier --write",
