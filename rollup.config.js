@@ -4,15 +4,15 @@ import commonjs from '@rollup/plugin-commonjs';
 import { babel } from '@rollup/plugin-babel';
 
 export default {
-    input: './libs.ts',
+    input: './netsuite-libs.ts',
     output: {
-        file: './libs.js',
+        file: './netsuite-libs.js',
         format: 'amd',
     },
     plugins: [
         typescript({ sourceMap: false }),
         nodeResolve(),
         commonjs(),
-        babel(),
+        //babel(),
     ],
 };
