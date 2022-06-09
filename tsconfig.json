@@ -29,6 +29,6 @@
     }
   },
   "exclude": [
-    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts", "config", "index.ts"
+    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts", "config", "index.ts", "netsuite-libs.ts"
   ],
 }
