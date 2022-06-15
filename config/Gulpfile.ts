@@ -288,7 +288,7 @@ function fixLibraryImports() {
         `Changing imports netsuite-libs/ to ./libs in all JS files from folder ${folderWithJS}`,
     );
     return src(`${folderWithJS}/*.js`, {})
-        .pipe(replace('"netsuite-libs/', '"./libs/'))
+        .pipe(replace(`'netsuite-libs/`, `'./libs/`))
         .pipe(dest(`${folderWithJS}`));
 }
 
