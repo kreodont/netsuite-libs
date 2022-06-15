@@ -4,9 +4,9 @@
     "strictNullChecks": true,
     "strict": false,
     "declaration": false,
-    "module": "amd",
+    "module": "ESNext",
     "moduleResolution": "node",
-    "target": "ES5",
+    "target": "ESNext",
     "sourceMap": false,
     "newLine": "LF",
     "noUnusedLocals": true,
@@ -29,6 +29,6 @@
     }
   },
   "exclude": [
-    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts", "babel.config.js", "suitecloud.config.js"
+    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts", "babel.config.js", "suitecloud.config.js", "rollup.config.js"
   ],
 }
