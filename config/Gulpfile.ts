@@ -56,9 +56,9 @@ class ScriptFile {
         // status TESTING is not an error, the RELEASED raising an error
         return `
             <scriptdeployment scriptid="${scriptName.replace(
-                "customscript",
-                "customdeploy",
-            )}_${deploymentNumber}">
+            "customscript",
+            "customdeploy",
+        )}_${deploymentNumber}">
                 <status>TESTING</status>
                 <title>${scriptName}_${deploymentNumber}</title>
                 <isdeployed>T</isdeployed>
@@ -71,9 +71,9 @@ class ScriptFile {
     static suiteletDeployment(scriptName: string): string {
         return `
             <scriptdeployment scriptid="${scriptName.replace(
-                "customscript",
-                "customdeploy",
-            )}">
+            "customscript",
+            "customdeploy",
+        )}">
                 <status>${deploymentStatus()}</status>
                 <title>${scriptName}</title>
                 <isdeployed>T</isdeployed>
@@ -85,9 +85,9 @@ class ScriptFile {
     static portletDeployment(scriptName: string): string {
         return `
             <scriptdeployment scriptid="${scriptName.replace(
-                "customscript",
-                "customdeploy",
-            )}">
+            "customscript",
+            "customdeploy",
+        )}">
                 <status>${deploymentStatus()}</status>
                 <title>${scriptName}</title>
                 <isdeployed>T</isdeployed>
@@ -116,7 +116,7 @@ class ScriptFile {
             if (deployment.indexOf("CUSTOMRECORD") >= 0) {
                 deploymentsList[
                     deploymentsList.indexOf(deployment)
-                ] = `[${deployment.toLowerCase()}]`;
+                    ] = `[${deployment.toLowerCase()}]`;
             }
         }
         return deploymentsList;
@@ -157,9 +157,9 @@ class ScriptFile {
             if (this.scriptType().toLowerCase() === "usereventscript") {
                 outputText += `        
                             <scriptdeployment scriptid="${this.name().replace(
-                                "customscript",
-                                "customdeploy",
-                            )}_${deployment_number}">
+                    "customscript",
+                    "customdeploy",
+                )}_${deployment_number}">
                                 <isdeployed>T</isdeployed>
                                 <loglevel>DEBUG</loglevel>
                                 <allroles>T</allroles>
@@ -172,9 +172,9 @@ class ScriptFile {
             } else {
                 outputText += `        
                             <scriptdeployment scriptid="${this.name().replace(
-                                "customscript",
-                                "customdeploy",
-                            )}_${deployment_number}">
+                    "customscript",
+                    "customdeploy",
+                )}_${deployment_number}">
                                 <isdeployed>T</isdeployed>
                                 <loglevel>DEBUG</loglevel>
                                 <allroles>T</allroles>
@@ -270,6 +270,7 @@ function transpile() {
         .pipe(dest(`${outputDirectory}`));
 }
 
+
 function transpileLibs() {
     const tsProject = ts_compiler.createProject(
         `./node_modules/netsuite-libs/tsconfig.json`,
@@ -351,12 +352,19 @@ function copyJSLibs() {
     ).pipe(dest(`${outputDirectory}/${dirName}/libs`));
 }
 
+function rollUp() {
+    const runString = `rollup -c --input '${outputDirectory}/${dirName}/*.js'`
+    log(runString)
+    return exec(runString)
+}
+
 checkBranch();
 
 exports[buildName] = series(
     cleanOutput,
     cleanScriptsDefinitions,
     transpile,
+    rollUp,
     transpileLibs,
     copyJSLibs,
     fixLibraryImports,
@@ -368,11 +376,11 @@ exports[buildAndDeployName] = series(
     cleanOutput,
     cleanScriptsDefinitions,
     transpile,
+    rollUp,
     transpileLibs,
     copyJSLibs,
     fixLibraryImports,
     writeScriptConfigurationFiles,
-    runTests,
     deploy,
     deploy,
 );
