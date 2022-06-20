@@ -20,10 +20,10 @@
     "esModuleInterop": true,
     "paths": {
       "N/*": [
-        "./node_modules/@hitc/netsuite-types/N/*", "../@hitc/netsuite-types/N/*"
+        "node_modules/@hitc/netsuite-types/N/*", "../@hitc/netsuite-types/N/*"
       ],
       "N": [
-        "./node_modules/@hitc/netsuite-types/N", "../@hitc/netsuite-types/N"
+        "node_modules/@hitc/netsuite-types/N", "../@hitc/netsuite-types/N"
       ]
     }
   },

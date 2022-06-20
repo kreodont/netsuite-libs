@@ -222,6 +222,8 @@ function cleanOutput() {
 function compile() {
     const inputFiles = (fs.readdirSync('./') as string[]).filter(f => f.endsWith('.ts')).filter(f => f !== 'Gulpfile.ts');
     inputFiles.push('moment')
+    inputFiles.push('sweetalert2') // must be imported import Swal from 'sweetalert2/dist/sweetalert2.all'
+    inputFiles.push('ts-serializable')
     inputFiles.push('./netsuite-libs/StepsRunner.ts')
     const runString = `rollup -c ` + inputFiles.map(f => `--input ${f}`).join(' ')
     log(runString)
