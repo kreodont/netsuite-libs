@@ -220,7 +220,10 @@ function cleanOutput() {
 }
 
 function compile() {
-    const runString = `rollup -c`
+    const inputFiles = (fs.readdirSync('./') as string[]).filter(f => f.endsWith('.ts')).filter(f => f !== 'GulpFile.ts');
+    inputFiles.push('moment')
+    inputFiles.push('./netsuite-libs/StepsRunner.s')
+    const runString = `rollup -c ` + inputFiles.map(f => `--input ${f}`).join(' ')
     log(runString)
     return exec(runString)
 }
