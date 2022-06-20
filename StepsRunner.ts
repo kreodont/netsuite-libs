@@ -80,7 +80,7 @@ export class StepsRunner {
                     true,
                     error,
                 );
-                notifyOwner(this.logger.scriptName, e as string);
+                notifyOwner(String(e), kit._logs);
                 return kit;
             }
 
@@ -103,8 +103,8 @@ export class StepsRunner {
                     error,
                 );
                 notifyOwner(
-                    this.logger.scriptName,
                     kit.scriptErrors.join(', '),
+                    kit._logs
                 );
                 return kit;
             }

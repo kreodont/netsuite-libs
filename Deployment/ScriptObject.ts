@@ -1,70 +1,3 @@
-enum ScriptType {
-    None = 'None',
-    Client = 'Client',
-    UserEventScript = 'UserEventScript',
-    Suitelet ='Suitelet',
-    Restlet = 'Restlet',
-    MapReduceScript ='MapReduceScript',
-    Portlet = 'Portlet',
-    MassUpdateScript = 'MassUpdateScript',
-    WorkflowActionScript = 'WorkflowActionScript' ,
-    ScheduledScript = 'ScheduledScript'}
-
-type LogLevel = 'DEBUG' | 'AUDIT' | 'INTERNAL' | 'ERROR' | 'SYSTEM' | 'EMERGENCY'
-
-class ScriptDeployment {
-    scriptid: string
-    status: 'TESTING' | 'RELEASED'
-    title: string
-    isdeployed: 'T' | 'F'
-    recordtype: string | null
-    loglevel: LogLevel
-    allroles: 'T' | 'F'
-    executioncontext: string | null
-    runasrole: string
-    constructor(
-        scriptId: string,
-        status: 'TESTING' | 'RELEASED',
-        title: string,
-        isDeployed: 'T' | 'F',
-        recordType: string | null,
-        logLevel: LogLevel = 'DEBUG',
-        executionContext: string | null,
-        runAsRole: string = 'Administrator',
-        allRoles: 'T' | 'F' = 'T'
-    ) {
-        this.scriptid = scriptId
-        this.status = status
-        this.title = title
-        this.isdeployed = isDeployed
-        this.recordtype = recordType && recordType.length > 0 ? recordType : null
-        this.loglevel = logLevel
-        this.executioncontext = executionContext
-        this.runasrole = runAsRole
-        this.allroles = allRoles
-    }
-    static copy(i: ScriptDeployment): ScriptDeployment {
-        return new ScriptDeployment(i.scriptid, i.status, i.title, i.isdeployed, i.recordtype, i.loglevel, i.executioncontext, i.runasrole, i.allroles)
-    }
-    xml(): string {
-        let outputString = `<scriptdeployment scriptid="${this.scriptid}">
-    <status>${this.status}</status>
-    <title>${this.scriptid}</title>
-    <isdeployed>${this.isdeployed}</isdeployed>
-    <loglevel>${this.loglevel}</loglevel>
-    <allroles>${this.allroles}</allroles>
-`
-        if (this.executioncontext) {
-            outputString += `    <executioncontext>${this.executioncontext}</executioncontext>\n`
-        }
-        if (this.recordtype) {
-            outputString += `    <recordtype>${this.recordtype}</recordtype>\n`
-        }
-        outputString += `</scriptdeployment>`
-        return outputString
-    }
-}
-
 export class ScriptObject {
     scriptid: string = ''
     name: string = ''
@@ -200,5 +133,73 @@ export class ScriptObject {
         }
         outputText += `\n</${this.type.toLowerCase()}>`
         return outputText
+    }
+}
+
+enum ScriptType {
+    None = 'None',
+    Client = 'Client',
+    UserEventScript = 'UserEventScript',
+    Suitelet ='Suitelet',
+    Restlet = 'Restlet',
+    MapReduceScript ='MapReduceScript',
+    Portlet = 'Portlet',
+    MassUpdateScript = 'MassUpdateScript',
+    WorkflowActionScript = 'WorkflowActionScript' ,
+    ScheduledScript = 'ScheduledScript'}
+
+type LogLevel = 'DEBUG' | 'AUDIT' | 'INTERNAL' | 'ERROR' | 'SYSTEM' | 'EMERGENCY'
+
+class ScriptDeployment {
+    scriptid: string
+    status: 'TESTING' | 'RELEASED'
+    title: string
+    isdeployed: 'T' | 'F'
+    recordtype: string | null
+    loglevel: LogLevel
+    allroles: 'T' | 'F'
+    executioncontext: string | null
+    runasrole: string
+    constructor(
+        scriptId: string,
+        status: 'TESTING' | 'RELEASED',
+        title: string,
+        isDeployed: 'T' | 'F',
+        recordType: string | null,
+        logLevel: LogLevel = 'DEBUG',
+        executionContext: string | null,
+        runAsRole: string = 'Administrator',
+        allRoles: 'T' | 'F' = 'T'
+    ) {
+        this.scriptid = scriptId
+        this.status = status
+        this.title = title
+        this.isdeployed = isDeployed
+        this.recordtype = recordType && recordType.length > 0 ? recordType : null
+        this.loglevel = logLevel
+        this.executioncontext = executionContext
+        this.runasrole = runAsRole
+        this.allroles = allRoles
+    }
+    static copy(i: ScriptDeployment): ScriptDeployment {
+        return new ScriptDeployment(i.scriptid, i.status, i.title, i.isdeployed, i.recordtype, i.loglevel, i.executioncontext, i.runasrole, i.allroles)
+    }
+    xml(): string {
+        let outputString = `<scriptdeployment scriptid="${this.scriptid}">
+    <status>${this.status}</status>
+    <title>${this.scriptid}</title>
+    <isdeployed>${this.isdeployed}</isdeployed>
+    <loglevel>${this.loglevel}</loglevel>
+    <allroles>${this.allroles}</allroles>
+    <runasrole>${this.runasrole.toUpperCase()}</runasrole>
+`
+        if (this.executioncontext) {
+            outputString += `    <executioncontext>${this.executioncontext}</executioncontext>\n`
+        }
+        if (this.recordtype) {
+            outputString += `    <recordtype>${this.recordtype}</recordtype>\n`
+        }
+        outputString += `</scriptdeployment>`
+        return outputString
     }
 }
