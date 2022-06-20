@@ -1,6 +1,7 @@
 import {ScriptObject} from "../Deployment/ScriptObject";
 
 describe("Deployment tests", () => {
+
     test("All the script files should have tag @NApiVersion", () => {
         const wrong = new ScriptObject('', '', '')
         expect(wrong.errors.indexOf('Missing tag @NApiVersion')).toBeGreaterThanOrEqual(0)
@@ -73,10 +74,10 @@ describe("Deployment tests", () => {
     test(`Unknown @NScriptType is not allowed`, () => {
         const w = new ScriptObject('@NApiVersion 2.x @NScriptType FairyScript', '', '')
         expect(w.correct).toEqual(false)
-        expect(w.errors.indexOf('@NScriptType tag must be one of the following: None,Client,UserEvent,Suitelet,Restlet,MapReduce,Portlet,MassUpdateScript,WorkflowActionScript,ScheduledScript. Provided: FairyScript')).toBeGreaterThanOrEqual(0)
+        expect(w.errors.indexOf('@NScriptType tag must be one of the following: None,Client,UserEventScript,Suitelet,Restlet,MapReduceScript,Portlet,MassUpdateScript,WorkflowActionScript,ScheduledScript. Provided: FairyScript')).toBeGreaterThanOrEqual(0)
 
         const c = new ScriptObject(`@NApiVersion 2.x @NScriptType MassUpdateScript`, '', '')
-        expect(c.errors.indexOf(`@NScriptType tag must be one of the following: None,Client,UserEvent,Suitelet,Restlet,MapReduce,Portlet,MassUpdateScript,WorkflowActionScript,ScheduledScript. Provided: FairyScript`)).toEqual(-1)
+        expect(c.errors.indexOf(`@NScriptType tag must be one of the following: None,Client,UserEventScript,Suitelet,Restlet,MapReduceScript,Portlet,MassUpdateScript,WorkflowActionScript,ScheduledScript. Provided: FairyScript`)).toEqual(-1)
     })
 
     test(`Project folder should always start with SuiteScripts/`, () => {
@@ -86,8 +87,7 @@ describe("Deployment tests", () => {
 
         const c = new ScriptObject(``, ``, `SuiteScripts/TempProject`)
         expect(c.errors.indexOf(`projectFolder must always start with SuiteScripts/`)).toEqual(-1)
-        }
-    )
+        })
 
     test(`If @NDeploy tag specified, the script should have at least one deployment`, () => {
         const s = new ScriptObject(`@NDeploy`, ``, ``)
@@ -104,7 +104,7 @@ describe("Deployment tests", () => {
     })
 
     test(`UserEvent script must have at least 1 non-empty deployment`, () => {
-        const w = new ScriptObject(`@NScriptType UserEvent\n@NDeploy`, ``, ``)
+        const w = new ScriptObject(`@NScriptType UserEventScript\n@NDeploy`, ``, ``)
         expect(w.correct).toEqual(false)
         expect(w.errors.indexOf(`UserEvent script must have at least one deployment to a record`)).toBeGreaterThanOrEqual(0)
 
@@ -121,31 +121,31 @@ describe("Deployment tests", () => {
     })
 
     test(`MapReduce scripts must have only 1 bare @NDeploy tag and 10 deployments by default`, () => {
-        const w = new ScriptObject(`@NScriptType MapReduce`, `ue_some_script`, ``)
+        const w = new ScriptObject(`@NScriptType MapReduceScript`, `ue_some_script`, ``)
         expect(w.correct).toEqual(false)
         expect(w.errors.indexOf(`MapReduce script must have one empty @NDeploy tag`)).toBeGreaterThanOrEqual(0)
 
-        const w2 = new ScriptObject(`@NScriptType MapReduce\n@NDeploy Estimate`, `ue_some_script`, ``)
+        const w2 = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy Estimate`, `ue_some_script`, ``)
         expect(w2.correct).toEqual(false)
         expect(w2.errors.indexOf(`MapReduce @NDeploy tag must be empty`)).toBeGreaterThanOrEqual(0)
 
-        const c = new ScriptObject(`@NScriptType MapReduce\n@NDeploy`, `ue_some_script`, ``)
+        const c = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy`, `ue_some_script`, ``)
         expect(c.deployments.length).toEqual(10)
         expect(c.deployments[9].scriptid).toEqual('customdeploy_ue_some_script10')
     })
 
     test(`MapReduce deployments status must always be TESTING (SDF rejects RELEASED)`, () => {
-        const c = new ScriptObject(`@NScriptType MapReduce\n@NDeploy`, `ue_some_script`, ``)
+        const c = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy`, `ue_some_script`, ``)
         expect(c.deployments[0].status).toEqual('TESTING')
     })
 
     test(`UserEvent script default context must be USERINTERFACE|WEBSERVICES|CSVIMPORT`, () => {
-        const c = new ScriptObject(`@NScriptType UserEvent\n@NDeploy Sales Order`, `ue_some_script`, ``)
+        const c = new ScriptObject(`@NScriptType UserEventScript\n@NDeploy Sales Order`, `ue_some_script`, ``)
         expect(c.deployments[0].executioncontext).toEqual('USERINTERFACE|WEBSERVICES|CSVIMPORT')
     })
 
     test(`Deployment XML`, () => {
-        const c = new ScriptObject(`@NScriptType UserEvent\n@NDeploy Sales Order`, `ue_some_script`, ``)
+        const c = new ScriptObject(`@NScriptType UserEventScript\n@NDeploy Sales Order`, `ue_some_script`, ``)
         expect(c.deployments[0].xml()).toEqual(`<scriptdeployment scriptid="customdeploy_ue_some_script1">
     <status>RELEASED</status>
     <title>customdeploy_ue_some_script1</title>
@@ -158,11 +158,12 @@ describe("Deployment tests", () => {
     })
 
     test(`Script XML without deployments`, () => {
-        const c = new ScriptObject(`@NScriptType ClientScript\n@NName Some Client script`, `cl_some_script.js`, ``)
+        const c = new ScriptObject(`@NScriptType ClientScript\n@NName Some Client script`, `cl_some_script.js`, `SuiteScripts/SomeFolder`)
         expect(c.xml()).toEqual(`<clientscript scriptid="customscript_cl_some_script">
     <name>Some Client script</name>
-    <notifyowner>F</notifyowner>
-    <scriptfile>[/cl_some_script.js]</scriptfile>
+    <notifyowner>T</notifyowner>
+    <description></description>
+    <scriptfile>[/SuiteScripts/SomeFolder/cl_some_script.js]</scriptfile>
 </clientscript>`)
     })
 
@@ -170,8 +171,9 @@ describe("Deployment tests", () => {
         const c = new ScriptObject(`@NScriptType ClientScript\n@NName Some Client script\n@NDeploy Sales Order, Customer`, `cl_some_script.js`, ``)
         expect(c.xml()).toEqual(`<clientscript scriptid="customscript_cl_some_script">
     <name>Some Client script</name>
-    <notifyowner>F</notifyowner>
-    <scriptfile>[/cl_some_script.js]</scriptfile>
+    <notifyowner>T</notifyowner>
+    <description></description>
+    <scriptfile>[//cl_some_script.js]</scriptfile>
 \t<scriptdeployments>
 \t\t<scriptdeployment scriptid="customdeploy_cl_some_script1">
 \t\t    <status>RELEASED</status>

@@ -41,30 +41,37 @@ export function chunks<T>(inputArray: Array<T>, chunkSize: number): Array<T>[] {
     return outputArray;
 }
 
-export function notifyOwner(scriptName: string, errorText: string): void {
-    const sql = `select employee.id as owner_id, email as owner_email from script join employee on script.owner = employee.id join File on script.scriptfile = File.id where File.name = '${scriptName}'`;
+export function notifyOwner(errorText: string, logsToInclude: string[], logs?: string[]): void {
+    const scriptId = runtime.getCurrentScript().id
+    logs?.push(`Script id: "${scriptId}"`)
+    const sql = `select employee.id as owner_id, employee.email as owner_email, script.name as script_name from script join employee on script.owner = employee.id join file on file.id = script.scriptfile where script.scriptid = '${scriptId}'`;
     const results = getSqlResultAsMap(sql, []);
     if (results === undefined) {
+        logs?.push(`Failed to run sql: ${sql}, results: ${JSON.stringify(results)}`)
         return;
     }
     if (results.length < 1) {
+        logs?.push(`Failed to run sql: ${sql}, results: ${JSON.stringify(results)}`)
         return;
     }
 
-    const ownerId = results[0]['owner_id'] as number;
-    const ownerEmail = results[0]['owner_email'] as string;
+    const ownerId = Number(results[0]['owner_id']);
+    const ownerEmail = String(results[0]['owner_email']);
     if (!ownerId || ownerEmail.length === 0) {
+        logs?.push(`Could not find ownerId or ownerEmail in ${JSON.stringify(results[0])}`)
         return;
     }
     try {
         email.send({
             author: ownerId,
             recipients: [`${ownerEmail}`],
-            subject: `Script "${scriptName}" failed`,
-            body: errorText,
+            subject: `Script "${results[0]['script_name']}" failed`,
+            body: errorText + logsToInclude.join('</br>'),
             attachments: [],
         });
+        logs?.push(`Email to ${ownerEmail} sent`)
     } catch (e) {
+        logs?.push(`Could not send a mail: ${e}`)
         return;
     }
 }
