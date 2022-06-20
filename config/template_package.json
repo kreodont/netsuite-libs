@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "jest --config ./babel.config.js",
-    "postinstall": "cp ./node_modules/netsuite-libs/config/Gulpfile.ts ./ && cp ./node_modules/netsuite-libs/config/tsconfig.json ./ && cp ./node_modules/netsuite-libs/config/.eslintrc.js ./ && cp ./node_modules/netsuite-libs/config/.prettierignore ./ && cp ./node_modules/netsuite-libs/config/.prettierrc.json ./ && cp ./node_modules/netsuite-libs/config/_gitignore ./.gitignore && cp ./node_modules/netsuite-libs/config/babel.config.js ./babel.config.js && cp -R ./node_modules/netsuite-libs/config/__tests__ ./ && cp ./node_modules/netsuite-libs/config/rollup.config.js ./ && cp cp ./node_modules/netsuite-libs/*.ts ./netsuite-libs/StepsRunner/",
+    "postinstall": "cp ./node_modules/netsuite-libs/config/Gulpfile.ts ./ && cp ./node_modules/netsuite-libs/config/tsconfig.json ./ && cp ./node_modules/netsuite-libs/config/.eslintrc.js ./ && cp ./node_modules/netsuite-libs/config/.prettierignore ./ && cp ./node_modules/netsuite-libs/config/.prettierrc.json ./ && cp ./node_modules/netsuite-libs/config/_gitignore ./.gitignore && cp ./node_modules/netsuite-libs/config/babel.config.js ./babel.config.js && cp -R ./node_modules/netsuite-libs/config/__tests__ ./ && cp ./node_modules/netsuite-libs/config/rollup.config.js ./ && mkdir ./netsuite-libs && cp ./node_modules/netsuite-libs/*.ts ./netsuite-libs/",
     "lint": "eslint -c .eslintrc.js --ext .ts ./",
     "lint-fix": "eslint --fix -c .eslintrc.js --ext .ts ./",
     "prettier-all": "prettier --write *.ts"
