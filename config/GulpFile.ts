@@ -1,3 +1,11 @@
+const fs = require("fs");
+const { series, src, dest } = require("gulp");
+const clean = require("gulp-clean");
+const path = require("path");
+const log = require("fancy-log");
+const exec = require("child_process").exec;
+const replace = require('gulp-replace');
+
 enum ScriptType {
     None = 'None',
     Client = 'Client',
@@ -65,7 +73,7 @@ class ScriptDeployment {
     }
 }
 
-export class ScriptObject {
+class ScriptObject {
     scriptid: string = ''
     name: string = ''
     description: string = ''
@@ -202,3 +210,89 @@ export class ScriptObject {
         return outputText
     }
 }
+
+const outputDirectory = `./src/FileCabinet/SuiteScripts`;
+
+function cleanOutput() {
+    return src([`./src/Objects/*`, `${outputDirectory}/*`])
+        .pipe(clean())
+
+}
+
+function compile() {
+    const runString = `rollup -c`
+    log(runString)
+    return exec(runString)
+}
+
+function moveBanner() {
+    /*
+    Rollup moves NetSuite banner under define. Need to make sure its always atop
+     */
+    return src(`${outputDirectory}/${path.basename(__dirname)}/*.js`)
+        .pipe(replace(/(^.+)(\/\*\*.+@NApiVersion.+?\/)(.+$)/sm, (whole: string, before: string, tag: string, after: string) => `${tag.replace(/ {5}/g, '')}\n\n${before}${after}`))
+        .pipe(dest(`${outputDirectory}/${path.basename(__dirname)}/`));
+
+}
+
+function uploadToNetSuite(cb: CallableFunction) {
+    exec(
+        `suitecloud project:deploy && suitecloud project:deploy`,
+        function (err: string, stdout: string, stderr: string) {
+            log(stdout);
+            log(stderr);
+            cb(err);
+        },
+    );
+}
+
+function makeConfigurationFiles() {
+    if (!fs.existsSync("./src/Objects/")) {
+        fs.mkdirSync("./src/Objects/");
+    }
+    const inputStream = src([`./*.ts`]);
+    inputStream.on("data", (file: { contents: Buffer; history: string[] }) => {
+        if (path.basename(file.history[0]) === "Gulpfile.ts") {
+            return;
+        }
+        const fileText = file.contents.toString("utf8")
+        if (!/\* @NScriptType (.+)/.exec(fileText)) {
+            return
+        }
+        log('"' + path.basename(file.history[0]) + '"')
+        const script = new ScriptObject(
+            fileText,
+            path.basename(file.history[0]).replace(/ts$/, 'js'),
+            `SuiteScripts/${path.basename(__dirname)}`)
+        if (script.errors.length > 0) {
+            log(script.errors)
+            throw `Fix the errors above`
+        }
+        fs.writeFile(
+            `./src/Objects/${script.scriptid}.xml`,
+            script.xml(),
+            function (err: string) {
+                if (err) return log(err);
+            },
+        );
+    })
+    inputStream.on("end", () => {
+        exec(`suitecloud project:adddependencies`, function () {});
+    });
+    return inputStream
+}
+
+exports[`${path.basename(__dirname)}_build`] = series(
+    cleanOutput,
+    compile,
+    moveBanner,
+    makeConfigurationFiles
+);
+
+exports[`${path.basename(__dirname)}_deploy`] = series(
+    cleanOutput,
+    compile,
+    moveBanner,
+    makeConfigurationFiles,
+    uploadToNetSuite,
+);
