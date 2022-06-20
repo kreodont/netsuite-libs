@@ -13,7 +13,6 @@
     "experimentalDecorators": true,
     "baseUrl": "./",
     "rootDir": "../",
-    "outDir": "./",
     "lib": [
       "es5","es2015.promise", "dom", "es6", "dom.iterable"
     ],
