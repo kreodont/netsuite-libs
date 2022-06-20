@@ -8,7 +8,7 @@ const replace = require('gulp-replace');
 
 enum ScriptType {
     None = 'None',
-    Client = 'Client',
+    ClientScript = 'ClientScript',
     UserEventScript = 'UserEventScript',
     Suitelet ='Suitelet',
     Restlet = 'Restlet',
@@ -220,9 +220,9 @@ function cleanOutput() {
 }
 
 function compile() {
-    const inputFiles = (fs.readdirSync('./') as string[]).filter(f => f.endsWith('.ts')).filter(f => f !== 'GulpFile.ts');
+    const inputFiles = (fs.readdirSync('./') as string[]).filter(f => f.endsWith('.ts')).filter(f => f !== 'Gulpfile.ts');
     inputFiles.push('moment')
-    inputFiles.push('./netsuite-libs/StepsRunner.s')
+    inputFiles.push('./netsuite-libs/StepsRunner.ts')
     const runString = `rollup -c ` + inputFiles.map(f => `--input ${f}`).join(' ')
     log(runString)
     return exec(runString)
