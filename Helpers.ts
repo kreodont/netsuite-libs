@@ -10,7 +10,7 @@
 import log from 'N/log';
 import query from 'N/query';
 import url from 'N/url';
-import moment from './moment';
+import moment from 'moment';
 import email from 'N/email';
 import { TypeForAsMap } from './Types';
 import { runtime } from 'N';
@@ -44,6 +44,7 @@ export function chunks<T>(inputArray: Array<T>, chunkSize: number): Array<T>[] {
 export function notifyOwner(errorText: string, logsToInclude: string[], logs?: string[]): void {
     const scriptId = runtime.getCurrentScript().id
     logs?.push(`Script id: "${scriptId}"`)
+    logs?.push(`Logs to include: ${logsToInclude}`)
     const sql = `select employee.id as owner_id, employee.email as owner_email, script.name as script_name from script join employee on script.owner = employee.id join file on file.id = script.scriptfile where script.scriptid = '${scriptId}'`;
     const results = getSqlResultAsMap(sql, []);
     if (results === undefined) {
@@ -66,7 +67,7 @@ export function notifyOwner(errorText: string, logsToInclude: string[], logs?: s
             author: ownerId,
             recipients: [`${ownerEmail}`],
             subject: `Script "${results[0]['script_name']}" failed`,
-            body: errorText + logsToInclude.join('</br>'),
+            body: errorText,
             attachments: [],
         });
         logs?.push(`Email to ${ownerEmail} sent`)
@@ -289,7 +290,7 @@ export function loadTransactionLineGroup(
     } = {};
     for (const chunk of chunks(transactionsIds, 1000)) {
         const sql = `WITH Framed AS ( SELECT uniquekey, item, BUILTIN.DF(item) as item_name, itemtype, BUILTIN.DF(transaction) as tr_name, linesequencenumber, SUM(CASE WHEN itemtype IN ('Group', 'EndGroup') THEN 1 ELSE 0 END) OVER (ORDER BY BUILTIN.DF(transaction), linesequencenumber) AS frame_id FROM transactionline where transaction in (${chunk.join(
-            ',',
+                ',',
         )}) and mainline = 'F' and taxline = 'F' ) SELECT linesequencenumber, uniquekey, item, item_name, tr_name, MAX(CASE WHEN itemtype = 'Group' THEN uniquekey END) OVER (PARTITION BY frame_id) as group_unique_key, MAX(CASE WHEN itemtype = 'Group' THEN item_name END) OVER (PARTITION BY frame_id) as group_name, MAX(CASE WHEN itemtype = 'Group' THEN item END) OVER (PARTITION BY frame_id) as group_id FROM Framed ORDER BY tr_name, linesequencenumber`;
         logs?.push(sql);
         const results = getSqlResultAsMap(sql, logs ? logs : []) as {
