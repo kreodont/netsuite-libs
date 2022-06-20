@@ -152,6 +152,7 @@ describe("Deployment tests", () => {
     <isdeployed>T</isdeployed>
     <loglevel>DEBUG</loglevel>
     <allroles>T</allroles>
+    <runasrole>ADMINISTRATOR</runasrole>
     <executioncontext>USERINTERFACE|WEBSERVICES|CSVIMPORT</executioncontext>
     <recordtype>SALESORDER</recordtype>
 </scriptdeployment>`)
@@ -181,6 +182,7 @@ describe("Deployment tests", () => {
 \t\t    <isdeployed>T</isdeployed>
 \t\t    <loglevel>DEBUG</loglevel>
 \t\t    <allroles>T</allroles>
+\t\t    <runasrole>ADMINISTRATOR</runasrole>
 \t\t    <executioncontext>USERINTERFACE</executioncontext>
 \t\t    <recordtype>SALESORDER</recordtype>
 \t\t</scriptdeployment>
@@ -190,6 +192,7 @@ describe("Deployment tests", () => {
 \t\t    <isdeployed>T</isdeployed>
 \t\t    <loglevel>DEBUG</loglevel>
 \t\t    <allroles>T</allroles>
+\t\t    <runasrole>ADMINISTRATOR</runasrole>
 \t\t    <executioncontext>USERINTERFACE</executioncontext>
 \t\t    <recordtype>CUSTOMER</recordtype>
 \t\t</scriptdeployment>
