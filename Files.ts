@@ -1,10 +1,15 @@
 import file from 'N/file';
-import { fetchOneValue, printLogPartial } from './Helpers';
+import runtime = require('N/runtime')
+import { fetchOneValue } from './Helpers';
 
 export function writeFileInCurrentDirectory(
-    scriptFileName: string,
+    /*
+    * Writes file in the directory where the current script js file resides. Can be used for large amount of logs storing
+    * */
+    // scriptFileName: string,
     desiredOutputFileName: string,
     fileContent: string,
+    logs?: string[]
 ): number[] {
     function stringChunks(initialString: string): string[] {
         const strings = initialString.split('\n');
@@ -18,18 +23,18 @@ export function writeFileInCurrentDirectory(
         return outputStrings;
     }
     const createdFilesIds: number[] = [];
-    if (scriptFileName.indexOf('.js') < 0) {
-        scriptFileName += '.js';
-    }
-    const sql = `select folder from file where name = '${scriptFileName}'`;
-    printLogPartial('writeFileInCurrentDirectory')(sql);
+    // if (scriptFileName.indexOf('.js') < 0) {
+    //     scriptFileName += '.js';
+    // }
+    const sql = `select folder from file where name = '${runtime.getCurrentScript().id}'`;
+    logs?.push(sql);
     const folderId = fetchOneValue(sql);
     if (!folderId) {
         return createdFilesIds;
     }
-    printLogPartial('writeFileInCurrentDirectory')(`Folder id is ${folderId}`);
+    logs?.push(`Folder id is ${folderId}`);
     const dataChunks = stringChunks(fileContent);
-    printLogPartial('writeFileInCurrentDirectory')(
+    logs?.push(
         `There are ${dataChunks.length} chunks`,
     );
     if (dataChunks.length < 1) {
@@ -45,14 +50,14 @@ export function writeFileInCurrentDirectory(
             fileType: file.Type.CSV,
             contents: dataChunks[chunkNumber],
         });
-        printLogPartial('writeFileInCurrentDirectory')(
+        logs?.push(
             `Saving file ${outputFileName}`,
         );
         fileObj.folder = Number(folderId);
         createdFilesIds.push(fileObj.save());
-        printLogPartial('writeFileInCurrentDirectory')('File saved');
+        logs?.push('File saved');
     }
-    printLogPartial('writeFileInCurrentDirectory')(
+    logs?.push(
         `Files created: ${JSON.stringify(createdFilesIds)}`,
     );
     return createdFilesIds;

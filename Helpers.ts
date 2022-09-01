@@ -222,7 +222,7 @@ export function parseDate(dateString: string, format: string): Date | null {
     /**
      * Format example: DD/MM/YYYY
      */
-    const momentDate: moment.Moment = moment.utc(dateString, format);
+    const momentDate: moment.Moment = moment.utc(dateString, format).add(8 , 'hours'); // to make sure its in NS timezone
     const newDate: Date = momentDate.toDate();
     if (newDate.toDateString().toLowerCase().indexOf('invalid') >= 0) {
         return null;
