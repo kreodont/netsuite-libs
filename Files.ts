@@ -4,8 +4,8 @@ import { fetchOneValue } from './Helpers';
 
 export function writeFileInCurrentDirectory(
     /*
-    * Writes file in the directory where the current script js file resides. Can be used for large amount of logs storing
-    * */
+    Writes file in the directory where the current script js file resides. Can be used for large amount of logs storing
+    */
     // scriptFileName: string,
     desiredOutputFileName: string,
     fileContent: string,
