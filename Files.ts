@@ -1,5 +1,5 @@
 import file from 'N/file';
-import runtime = require('N/runtime')
+import {runtime} from "N";
 import { fetchOneValue } from './Helpers';
 
 export function writeFileInCurrentDirectory(
@@ -12,9 +12,9 @@ export function writeFileInCurrentDirectory(
         const outputStrings: string[] = [];
         let i: number;
         let j: number;
-        const chunk = 100000;
-        for (i = 0, j = strings.length; i < j; i += chunk) {
-            outputStrings.push(strings.slice(i, i + chunk).join('\n'));
+        const chunkSize = 100000;
+        for (i = 0, j = strings.length; i < j; i += chunkSize) {
+            outputStrings.push(strings.slice(i, i + chunkSize).join('\n'));
         }
         return outputStrings;
     }
@@ -22,10 +22,11 @@ export function writeFileInCurrentDirectory(
     // if (scriptFileName.indexOf('.js') < 0) {
     //     scriptFileName += '.js';
     // }
-    const sql = `select folder from file where name = '${runtime.getCurrentScript().id}'`;
+    const sql = `select folder from file where name = '${runtime.getCurrentScript().id.replace('customscript_', '')}.js'`;
     logs?.push(sql);
     const folderId = fetchOneValue(sql);
     if (!folderId) {
+        logs?.push(`Folder not found`)
         return createdFilesIds;
     }
     logs?.push(`Folder id is ${folderId}`);
@@ -37,10 +38,10 @@ export function writeFileInCurrentDirectory(
         return createdFilesIds;
     }
     for (let chunkNumber = 0; chunkNumber < dataChunks.length; chunkNumber++) {
-        const outputFileName =
+        let outputFileName =
             chunkNumber < 1
-                ? `${desiredOutputFileName}.txt`
-                : `${desiredOutputFileName}_${chunkNumber}.txt`;
+                ? `${desiredOutputFileName.replace('.txt', '')}.txt`
+                : `${desiredOutputFileName.replace('.txt', '')}_${chunkNumber}.txt`;
         const fileObj = file.create({
             name: outputFileName,
             fileType: file.Type.CSV,
