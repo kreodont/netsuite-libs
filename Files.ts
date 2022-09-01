@@ -19,9 +19,6 @@ export function writeFileInCurrentDirectory(
         return outputStrings;
     }
     const createdFilesIds: number[] = [];
-    // if (scriptFileName.indexOf('.js') < 0) {
-    //     scriptFileName += '.js';
-    // }
     const sql = `select folder from file where name = '${runtime.getCurrentScript().id.replace('customscript_', '')}.js'`;
     logs?.push(sql);
     const folderId = fetchOneValue(sql);
