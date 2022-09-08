@@ -11,8 +11,8 @@ export class Cache {
         const name = cacheName ? cacheName : runtime.getCurrentScript().id
         logs?.push(`Cache name is ${cacheName}`)
         while (thereIsNext) {
-            currentCache = cache.getCache({name: name + String(additionalNumber)})
-            logs?.push(`Clearing "data" key from cache "${name + String(additionalNumber)}"`)
+            currentCache = cache.getCache({name: name + '_' + String(additionalNumber)})
+            logs?.push(`Clearing "data" key from cache "${name + '_' + String(additionalNumber)}"`)
             thereIsNext = currentCache.get({key: 'next'}) === 'true'
             currentCache.remove({key: 'data'})
             additionalNumber++
@@ -25,8 +25,8 @@ export class Cache {
         const allChunks = chunks(s.split(''), 499000)
         let currentCache: cache.Cache | null = null
         for (const chunk of allChunks) {
-            currentCache = cache.getCache({name: name + String(allChunks.indexOf(chunk))})
-            logs?.push(`Writing ${chunk.length} bytes to cache "${name + String(allChunks.indexOf(chunk))}"`)
+            currentCache = cache.getCache({name: name + '_' + String(allChunks.indexOf(chunk))})
+            logs?.push(`Writing ${chunk.length} bytes to cache "${name + '_' + String(allChunks.indexOf(chunk))}"`)
             currentCache.put({key: 'data', value: chunk.join(''), ttl: 300})
             currentCache.put({key: 'next', value: 'true', ttl: 300},)
         }
@@ -41,9 +41,9 @@ export class Cache {
         const name = cacheName ? cacheName : runtime.getCurrentScript().id
         logs?.push(`Cache name is "${cacheName}"`)
         while (thereIsNext) {
-            currentCache = cache.getCache({name: name + String(additionalNumber)})
+            currentCache = cache.getCache({name: name + '_' + String(additionalNumber)})
             const cacheString = currentCache.get({key: 'data'}) || ''
-            logs?.push(`Reading ${cacheString.length} bytes from cache "${name + String(additionalNumber)}"`)
+            logs?.push(`Reading ${cacheString.length} bytes from cache "${name + '_' + String(additionalNumber)}"`)
             outputString += cacheString
             thereIsNext = currentCache.get({key: 'next'}) === 'true'
             additionalNumber++
