@@ -205,26 +205,17 @@ export function adjustQuantity(
 export function getSqlResultAsMap(
     sqlString: string,
     logs: string[],
-): Record<string, string | boolean | number | null>[] | undefined {
-    const results: Record<string, string | boolean | number | null>[] = [];
-    let index = 0;
-    for (let i = 0; i < 20; i++) {
-        let sqlResults: Record<string, string | boolean | number | null>[];
-        try {
-            sqlResults = getValues(
-                getSqlResults(sqlString + ` and rownum > ${index}`).results,
-            );
-        } catch (e) {
-            logs.push(e as string);
-            return undefined;
+): TypeForAsMap | undefined {
+    try {
+        const sqlResults: query.Result[] = getSqlResults(sqlString).results;
+        if (sqlResults) {
+            return getValues(sqlResults);
         }
-        results.push(...sqlResults);
-        index += 5000;
-        if (sqlResults.length < 5000) {
-            break;
-        }
+    } catch (e) {
+        logs.push(e as string);
+        return undefined;
     }
-    return results;
+    return [];
 }
 export function parseDate(dateString: string, format: string): Date | null {
     /**
