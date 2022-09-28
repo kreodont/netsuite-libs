@@ -88,5 +88,11 @@ describe(`Tests for proper calculations for 360/30 (https://en.wikipedia.org/wik
     test(`End of February`, () => {
         expect(numberOfDays360(new Date("2022-02-28"), new Date("2023-02-27"))).toEqual(360)
     })
+    test(`End of February leap year`, () => {
+        expect(numberOfDays360(new Date("2022-02-28"), new Date("2024-02-28"))).toEqual(720)
+    })
+    test(`End of February jump over leap year`, () => {
+        expect(numberOfDays360(new Date("2022-02-28"), new Date("2025-02-27"))).toEqual(1080)
+    })
 
 })
