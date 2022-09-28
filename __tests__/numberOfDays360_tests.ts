@@ -85,5 +85,8 @@ describe(`Tests for proper calculations for 360/30 (https://en.wikipedia.org/wik
     test(`10 Years`, () => {
         expect(numberOfDays360(new Date("2022-09-02"), new Date("2032-09-01"))).toEqual(3600)
     })
+    test(`End of February`, () => {
+        expect(numberOfDays360(new Date("2022-02-28"), new Date("2023-02-27"))).toEqual(360)
+    })
 
 })
