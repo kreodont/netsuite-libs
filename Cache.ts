@@ -2,8 +2,6 @@ import {cache, runtime} from "N";
 import {chunks} from "./Helpers";
 
 export class Cache {
-
-
     static clear(cacheName?: string, logs?: string[]): void {
         let additionalNumber = 0
         let thereIsNext = true
@@ -52,5 +50,9 @@ export class Cache {
             outputString = ''
         }
         return outputString
+    }
+
+    static append(s: string, cacheName?: string, logs?: string[]) {
+        Cache.set(Cache.get() + s, cacheName, logs)
     }
 }
