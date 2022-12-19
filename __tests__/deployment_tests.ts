@@ -129,7 +129,8 @@ describe("Deployment tests", () => {
         expect(w2.correct).toEqual(false)
         expect(w2.errors.indexOf(`MapReduce @NDeploy tag must be empty`)).toBeGreaterThanOrEqual(0)
 
-        const c = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy`, `ue_some_script`, ``)
+        const c = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy\n@NName Some Map Reduce script\n@NDescription none\n@NApiVersion 2.1\n@NVariables 9`, `ue_some_script`, `SuiteScripts/`)
+        expect(c.correct).toEqual(true)
         expect(c.deployments.length).toEqual(10)
         expect(c.deployments[9].scriptid).toEqual('customdeploy_ue_some_script10')
     })
@@ -198,5 +199,24 @@ describe("Deployment tests", () => {
 \t\t</scriptdeployment>
 \t</scriptdeployments>
 </clientscript>`)
+    })
+
+    test(`For MapReduce, at least one NVariable is required`, () => {
+        const w = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy\n@NName Some Map Reduce script\n@NDescription none\n@NApiVersion 2.1`, `mr_some_script`, `SuiteScripts/`)
+        expect(w.correct).toEqual(false)
+        expect(w.errors.indexOf(`For MapReduce scripts at least one NVariables must be specified`)).toBeGreaterThanOrEqual(0)
+
+        const c = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy\n@NName Some Map Reduce script\n@NDescription none\n@NApiVersion 2.1\n@NVariables a, b`, `mr_some_script`, `SuiteScripts/`)
+        expect(c.correct).toEqual(true)
+        expect(c.mapReduceVariables.length).toEqual(2)
+        expect(c.mapReduceVariables[0]).toEqual('a')
+        expect(c.mapReduceVariables[1]).toEqual('b')
+    })
+
+    test(`MapReduce variable name length should not be more than 30 symbols`, () => {
+        const w = new ScriptObject(`@NScriptType MapReduceScript\n@NDeploy\n@NName Some Map Reduce script\n@NDescription none\n@NApiVersion 2.1\n@NVariables a, some_variable_with_a_very_long_name_which_is_definitely_longer_than_thirty_symbols`, `mr_some_script`, `SuiteScripts/`)
+        expect(w.correct).toEqual(false)
+        expect(w.errors.indexOf(`Map Reduce variable "some_variable_with_a_very_long_name_which_is_definitely_longer_than_thirty_symbols" name is too long. Should not be longer than 30 symbols (currently 82)`)).toBeGreaterThanOrEqual(0)
+
     })
 })

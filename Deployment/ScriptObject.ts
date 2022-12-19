@@ -4,6 +4,7 @@ export class ScriptObject {
     description: string = ''
     type: ScriptType = ScriptType.None
     deployments: ScriptDeployment[] = []
+    mapReduceVariables: string[] = []
     suiteScriptVersion: string = '2.0'
     scriptfile: string = ''
     portlettype: 'FORM' | 'HTML' | 'LINKS' | 'LIST' | null = null
@@ -51,7 +52,7 @@ export class ScriptObject {
             .replace(/_+$/, '')
 
         const scriptType = /@NScriptType (.+)/.exec(fileText)
-        this.type = scriptType && scriptType.length > 1 ? scriptType[1] as unknown as ScriptType  : ScriptType.None
+        this.type = scriptType && scriptType.length > 1 ? scriptType[1] as unknown as ScriptType : ScriptType.None
         if (this.type === ScriptType.None) {
             this.errors.push('@NScriptType tag must be specified')
         }
@@ -89,6 +90,15 @@ export class ScriptObject {
         }
 
         if (this.type === ScriptType.MapReduceScript) {
+            const variables = /@NVariables(.*)/.exec(fileText)
+            if (!variables) {
+                this.errors.push(`For MapReduce scripts at least one NVariables must be specified`)
+            }
+            else {
+                this.mapReduceVariables = variables[1].split(',').map(variable => variable.trim())
+                this.mapReduceVariables.filter(v => v.length > 30).map(v => this.errors.push(`Map Reduce variable "${v}" name is too long. Should not be longer than 30 symbols (currently ${v.length})`))
+            }
+
             if (this.deployments.length !== 1) {
                 this.errors.push(`MapReduce script must have one empty @NDeploy tag`)
             }
@@ -102,6 +112,7 @@ export class ScriptObject {
                     this.deployments.push(ScriptDeployment.copy(initialDeployment))
                 }
             }
+
         }
 
         /*
@@ -122,6 +133,41 @@ export class ScriptObject {
     <notifyowner>${this.notifyowner}</notifyowner>
     <description>${this.description}</description>
     <scriptfile>[${this.projectFolder}/${this.fileName}]</scriptfile>`
+        if (this.mapReduceVariables.length > 0) {
+            outputText += `<scriptcustomfields>`
+            for (const variable of this.mapReduceVariables) {
+                outputText += `
+                <scriptcustomfield scriptid="custscript_${variable.toLowerCase().replace(/ /g, '_')}">
+      <accesslevel>2</accesslevel>
+      <applyformatting>F</applyformatting>
+      <checkspelling>F</checkspelling>
+      <defaultchecked>F</defaultchecked>
+      <defaultselection></defaultselection>
+      <defaultvalue></defaultvalue>
+      <description></description>
+      <displayheight></displayheight>
+      <displaytype>NORMAL</displaytype>
+      <displaywidth></displaywidth>
+      <dynamicdefault></dynamicdefault>
+      <fieldtype>CLOBTEXT</fieldtype>
+      <help></help>
+      <isformula>F</isformula>
+      <ismandatory>F</ismandatory>
+      <label>${variable}</label>
+      <linktext></linktext>
+      <maxlength></maxlength>
+      <maxvalue></maxvalue>
+      <minvalue></minvalue>
+      <onparentdelete></onparentdelete>
+      <searchlevel>2</searchlevel>
+      <selectrecordtype></selectrecordtype>
+      <setting></setting>
+      <storevalue>T</storevalue>
+    </scriptcustomfield>
+                `
+            }
+            outputText +=  `</scriptcustomfields>`
+        }
         if (this.deployments.length > 0) {
             outputText += `\n\t<scriptdeployments>`
             for (const d of this.deployments) {
