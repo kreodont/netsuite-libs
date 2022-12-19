@@ -6,7 +6,7 @@ const log = require("fancy-log");
 const exec = require("child_process").exec;
 const replace = require("gulp-replace");
 
-export class ScriptObject {
+class ScriptObject {
     scriptid: string = ''
     name: string = ''
     description: string = ''
