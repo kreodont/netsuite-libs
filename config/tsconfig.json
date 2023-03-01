@@ -4,16 +4,15 @@
     "strictNullChecks": true,
     "strict": false,
     "declaration": false,
-    "module": "amd",
+    "module": "ESNext",
     "moduleResolution": "node",
-    "target": "ES5",
+    "target": "ESNext",
     "sourceMap": false,
     "newLine": "LF",
     "noUnusedLocals": true,
     "experimentalDecorators": true,
     "baseUrl": "./",
     "rootDir": "../",
-    "outDir": "./",
     "lib": [
       "es5","es2015.promise", "dom", "es6", "dom.iterable"
     ],
@@ -29,6 +28,6 @@
     }
   },
   "exclude": [
-    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts", "babel.config.js", "suitecloud.config.js"
+    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts", "babel.config.js", "suitecloud.config.js", "rollup.config.js"
   ],
 }

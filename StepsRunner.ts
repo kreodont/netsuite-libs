@@ -11,18 +11,21 @@ export type ScriptFunction = {
 
 export class KitTemplate implements IKit {
     _logs: string[] = [];
+    _all_logs: string[] = [];
     userWarnings: string[] = [];
     userErrors: string[] = [];
     scriptErrors: string[] = [];
     throwException = '';
     exitImmediately = false;
     log(text: string): void {
+        this._all_logs.push(text)
         this._logs.push(text);
     }
 }
 
 interface IKit {
     _logs: string[];
+    _all_logs: string[];
     userErrors: string[];
     scriptErrors: string[];
     userWarnings: string[];
@@ -80,7 +83,7 @@ export class StepsRunner {
                     true,
                     error,
                 );
-                notifyOwner(this.logger.scriptName, e as string);
+                notifyOwner(String(e), kit._all_logs);
                 return kit;
             }
 
@@ -103,8 +106,8 @@ export class StepsRunner {
                     error,
                 );
                 notifyOwner(
-                    this.logger.scriptName,
                     kit.scriptErrors.join(', '),
+                    kit._all_logs
                 );
                 return kit;
             }

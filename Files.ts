@@ -1,58 +1,57 @@
 import file from 'N/file';
-import { fetchOneValue, printLogPartial } from './Helpers';
+import {runtime} from "N";
+import { fetchOneValue } from './Helpers';
 
 export function writeFileInCurrentDirectory(
-    scriptFileName: string,
     desiredOutputFileName: string,
     fileContent: string,
+    logs?: string[]
 ): number[] {
     function stringChunks(initialString: string): string[] {
         const strings = initialString.split('\n');
         const outputStrings: string[] = [];
         let i: number;
         let j: number;
-        const chunk = 100000;
-        for (i = 0, j = strings.length; i < j; i += chunk) {
-            outputStrings.push(strings.slice(i, i + chunk).join('\n'));
+        const chunkSize = 100000;
+        for (i = 0, j = strings.length; i < j; i += chunkSize) {
+            outputStrings.push(strings.slice(i, i + chunkSize).join('\n'));
         }
         return outputStrings;
     }
     const createdFilesIds: number[] = [];
-    if (scriptFileName.indexOf('.js') < 0) {
-        scriptFileName += '.js';
-    }
-    const sql = `select folder from file where name = '${scriptFileName}'`;
-    printLogPartial('writeFileInCurrentDirectory')(sql);
+    const sql = `select folder from file where name = '${runtime.getCurrentScript().id.replace('customscript_', '')}.js'`;
+    logs?.push(sql);
     const folderId = fetchOneValue(sql);
     if (!folderId) {
+        logs?.push(`Folder not found`)
         return createdFilesIds;
     }
-    printLogPartial('writeFileInCurrentDirectory')(`Folder id is ${folderId}`);
+    logs?.push(`Folder id is ${folderId}`);
     const dataChunks = stringChunks(fileContent);
-    printLogPartial('writeFileInCurrentDirectory')(
+    logs?.push(
         `There are ${dataChunks.length} chunks`,
     );
     if (dataChunks.length < 1) {
         return createdFilesIds;
     }
     for (let chunkNumber = 0; chunkNumber < dataChunks.length; chunkNumber++) {
-        const outputFileName =
+        let outputFileName =
             chunkNumber < 1
-                ? `${desiredOutputFileName}.txt`
-                : `${desiredOutputFileName}_${chunkNumber}.txt`;
+                ? `${desiredOutputFileName.replace('.txt', '')}.txt`
+                : `${desiredOutputFileName.replace('.txt', '')}_${chunkNumber}.txt`;
         const fileObj = file.create({
             name: outputFileName,
             fileType: file.Type.CSV,
             contents: dataChunks[chunkNumber],
         });
-        printLogPartial('writeFileInCurrentDirectory')(
+        logs?.push(
             `Saving file ${outputFileName}`,
         );
         fileObj.folder = Number(folderId);
         createdFilesIds.push(fileObj.save());
-        printLogPartial('writeFileInCurrentDirectory')('File saved');
+        logs?.push('File saved');
     }
-    printLogPartial('writeFileInCurrentDirectory')(
+    logs?.push(
         `Files created: ${JSON.stringify(createdFilesIds)}`,
     );
     return createdFilesIds;
