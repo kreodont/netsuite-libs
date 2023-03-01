@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "jest --config ./babel.config.js",
-    "postinstall": "copy .\\node_modules\\netsuite-libs\\config\\Gulpfile.ts .\\ && copy .\\node_modules\\netsuite-libs\\config\\tsconfig.json .\\ && copy .\\node_modules\\netsuite-libs\\config\\.eslintrc.js .\\ && copy .\\node_modules\\netsuite-libs\\config\\.prettierignore .\\ && copy .\\node_modules\\netsuite-libs\\config\\.prettierrc.json .\\ && copy .\\node_modules\\netsuite-libs\\config\\_gitignore .\\.gitignore && copy .\\node_modules\\netsuite-libs\\config\\babel.config.js .\\babel.config.js && if not exist .\\__tests__ xcopy /i /s .\\node_modules\\netsuite-libs\\config\\__tests__ .\\",
+    "postinstall": "copy .\\node_modules\\netsuite-libs\\config\\Gulpfile.ts .\\ && copy .\\node_modules\\netsuite-libs\\config\\tsconfig.json .\\ && copy .\\node_modules\\netsuite-libs\\config\\.eslintrc.js .\\ && copy .\\node_modules\\netsuite-libs\\config\\.prettierignore .\\ && copy .\\node_modules\\netsuite-libs\\config\\.prettierrc.json .\\ && copy .\\node_modules\\netsuite-libs\\config\\_gitignore .\\.gitignore && copy .\\node_modules\\netsuite-libs\\config\\babel.config.js .\\babel.config.js && copy .\\node_modules\\netsuite-libs\\config\\rollup.config.js .\\ && (if not exist .\\netsuite-libs mkdir .\\netsuite-libs) && copy .\\node_modules\\netsuite-libs\\*.ts .\\netsuite-libs\\ && (if not exist .\\__tests__ xcopy \\i \\s .\\node_modules\\netsuite-libs\\config\\__tests__ .\\)",
     "lint": "eslint -c .eslintrc.js --ext .ts ./",
     "lint-fix": "eslint --fix -c .eslintrc.js --ext .ts ./",
     "prettier-all": "prettier --write *.ts"
