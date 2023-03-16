@@ -192,7 +192,7 @@ class ScriptObject {
 
 enum ScriptType {
     None = 'None',
-    Client = 'Client',
+    Client = 'ClientScript',
     UserEventScript = 'UserEventScript',
     Suitelet ='Suitelet',
     Restlet = 'Restlet',
