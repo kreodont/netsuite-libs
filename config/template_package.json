@@ -60,11 +60,6 @@
     "ts-serializable": "^2.0.64",
     "reflect-metadata": "^0.1.13"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
   "lint-staged": {
     "*.ts": [
       "prettier --write",
