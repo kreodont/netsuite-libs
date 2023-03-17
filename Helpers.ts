@@ -10,10 +10,11 @@
 import log from 'N/log';
 import query from 'N/query';
 import url from 'N/url';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import email from 'N/email';
 import { TypeForAsMap } from './Types';
 import { runtime } from 'N';
+
 
 export function printLogPartial(
     /**
@@ -221,7 +222,7 @@ export function parseDate(dateString: string, format: string): Date | null {
     /**
      * Format example: DD/MM/YYYY
      */
-    const momentDate: moment.Moment = moment.utc(dateString, format).add(8 , 'hours'); // to make sure its in NS timezone
+    const momentDate: dayjs.Dayjs = dayjs(dateString, format).add(8 , 'hours'); // to make sure its in NS timezone
     const newDate: Date = momentDate.toDate();
     if (newDate.toDateString().toLowerCase().indexOf('invalid') >= 0) {
         return null;

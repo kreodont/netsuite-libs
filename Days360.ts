@@ -1,11 +1,11 @@
-import moment from "moment";
+import dayjs from 'dayjs';
 
 function isLastDayOfFebruary(date: Date): boolean {
     return (
-        moment(date)
+        dayjs(date)
             .add(1, 'days')
             .date() === 1 &&
-        moment(date)
+        dayjs(date)
             .add(1, 'days')
             .month() === 2
     );
@@ -33,7 +33,7 @@ export function numberOfDays360(
     if (isLastDayOfFebruary(end)) {
         d2 = 30;
     }
-    if (isLastDayOfFebruary(start) && isLastDayOfFebruary(moment(end).add(1, 'days').toDate())) { // since Feb 27 is also end of February for the end date
+    if (isLastDayOfFebruary(start) && isLastDayOfFebruary(dayjs(end).add(1, 'days').toDate())) { // since Feb 27 is also end of February for the end date
         d1 = 30;
         d2 = 29;
     }
