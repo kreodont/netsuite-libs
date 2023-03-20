@@ -288,7 +288,7 @@ function makeConfigurationFiles() {
         }
         writeFileSync(`./src/Objects/${script.scriptid}.xml`, script.xml());
     }
-    execSync(`suitecloud project:adddependencies`);
+    // execSync(`suitecloud project:adddependencies`);
 }
 
 export function build() {
