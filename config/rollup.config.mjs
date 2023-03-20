@@ -1,24 +1,40 @@
-import nodeResolve from "@rollup/plugin-node-resolve";
+import typescript from 'rollup-plugin-typescript2';
+import resolve from 'rollup-plugin-node-resolve';
+import babel from 'rollup-plugin-babel';
 import commonjs from 'rollup-plugin-commonjs';
-import typescript from '@rollup/plugin-typescript';
-import {basename, dirname} from "path";
-import { fileURLToPath } from 'url';
+import glob from 'glob';
+import peerDepsExternal from 'rollup-plugin-peer-deps-external';
+import path from 'path';
 
-// @ts-ignore
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-
-export default {
-    input: [],
+const currentFolderName = path.basename(path.resolve('.'));
+const inputFiles = glob.sync('./*.ts').filter((file) => ['Gulpfile.ts', "deploy.ts"].indexOf(file) < 0);
+console.log(inputFiles)
+export default inputFiles.map((input) => ({
+    input,
     output: {
-        dir: `./src/FileCabinet/SuiteScripts/` + basename(__dirname),
+        dir: `.//src/FileCabinet/SuiteScripts/${currentFolderName}`,
         format: 'amd',
+        chunkFileNames: 'libs.js',
     },
-    external: ['N'],
+    external: ['N', 'N/log', 'N/query', 'N/email', 'N/url'],
     plugins: [
-        nodeResolve(),
-        typescript(),
+        resolve(),
+        peerDepsExternal(),
+        typescript({
+            tsconfig: 'tsconfig.rollup.json',
+        }),
+
+        babel({
+            extensions: ['.js', '.ts'],
+            runtimeHelpers: true,
+            exclude: 'node_modules/**'
+        }),
         commonjs(),
     ],
-};
+    manualChunks(id) {
+        if (id.includes('node_modules')) {
+            // Group all node_modules dependencies into a single chunk
+            return 'libs';
+        }
+    },
+}));

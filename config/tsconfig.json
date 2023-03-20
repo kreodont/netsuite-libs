@@ -1,33 +1,22 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "strictNullChecks": true,
-    "strict": false,
-    "declaration": false,
-    "module": "ESNext",
+    "target": "es5",
+    "module": "AMD",
     "moduleResolution": "node",
-    "target": "ESNext",
-    "sourceMap": false,
-    "newLine": "LF",
-    "noUnusedLocals": true,
-    "experimentalDecorators": true,
-    "baseUrl": "./",
-    "rootDir": "../",
-    "lib": [
-      "es5","es2015.promise", "dom", "es6", "dom.iterable"
-    ],
-    "skipLibCheck": false,
+    "strict": true,
     "esModuleInterop": true,
+    "outDir": "./src/FileCabinet/SuiteScripts",
+    "baseUrl": ".",
+    "rootDir": "../",
     "paths": {
       "N/*": [
-        "node_modules/@hitc/netsuite-types/N/*", "../@hitc/netsuite-types/N/*"
+        "./node_modules/@hitc/netsuite-types/N/*", "../@hitc/netsuite-types/N/*"
       ],
       "N": [
-        "node_modules/@hitc/netsuite-types/N", "../@hitc/netsuite-types/N"
-      ]
+        "./node_modules/@hitc/netsuite-types/N", "../@hitc/netsuite-types/N"
+      ],
     }
   },
-  "exclude": [
-    "node_modules",  "__mocks__", "__tests__", "Gulpfile.ts", "babel.config.js", "suitecloud.config.js", "rollup.config.js"
-  ],
+  "exclude": ["__tests__", "Gulpfile.ts"],
+  "include": ["*.ts", "netsuite-libs/*.ts"]
 }
