@@ -375,9 +375,9 @@ export function uploadFiles() {
     execSync(`jest`);
     console.log(`Tests completed\n`);
 
-    console.log(`Running rollup -c...`);
-    execSync(`rollup -c`, { stdio: `inherit` });
-    console.log(`Rollup -c completed\n`);
+    console.log(`tsc...`);
+    execSync(`tsc`, { stdio: `inherit` });
+    console.log(`tsc completed\n`);
 
     console.log(`Uploading files`);
     const uploadString = files.map(file => `"/SuiteScripts/${projectName}/${file}"`).join(` `);
