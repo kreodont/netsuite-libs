@@ -16,7 +16,7 @@ export default inputFiles.map((input) => ({
         format: 'amd',
         chunkFileNames: 'libs.js',
     },
-    external: ['N', 'N/log', 'N/query', 'N/email', 'N/url'],
+    external: ['N', 'N/log', 'N/query', 'N/email', 'N/url', 'N/ui/serverWidget', 'N/ui/message'],
     plugins: [
         resolve(),
         peerDepsExternal(),
