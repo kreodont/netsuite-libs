@@ -317,7 +317,7 @@ export function build() {
 function fixJSImports() {
     const d = `./src/FileCabinet/SuiteScripts/${path.basename(__dirname)}`
     copySync(`./netsuite-libs/dayjs.js`, `${d}/netsuite-libs/dayjs.js`)
-    copySync(`./netsuite-libs/ts-serializable.js`, `${d}/netsuite-libs/ts-serializable.js`)
+    copySync(`./netsuite-libs/jackson-js.js`, `${d}/netsuite-libs/jackson-js.js`)
     const files = readdirSync(d);
     const jsFiles = files
         .filter(file => path.extname(file) === `.js`)
@@ -325,10 +325,7 @@ function fixJSImports() {
         const fileContents = readFileSync(`${d}/${f}`, `utf8`)
             .replace(/"netsuite-libs/g, '"./netsuite-libs')
             .replace(/"dayjs"/g, '"./netsuite-libs/dayjs"')
-            .replace(/"ts-serializable"/g, '"./netsuite-libs/ts-serializable"');
-        if (fileContents.indexOf(`@NScriptType`) < 0) {
-            continue;
-        }
+            .replace(/"jackson-js.js"/g, '"./netsuite-libs/jackson-js.js"');
         writeFileSync(`${d}/${f}`, fileContents);
     }
 }
