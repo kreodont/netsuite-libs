@@ -1,6 +1,6 @@
 import { execSync } from 'child_process';
 import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync, copySync  } from 'fs-extra';
-import path from 'path';
+import path = require('path');
 
 class ScriptObject {
     scriptid = ``;
@@ -314,6 +314,25 @@ export function build() {
     }
 }
 
+function fixJSImports() {
+    const d = `./src/FileCabinet/SuiteScripts/${path.basename(__dirname)}`
+    copySync(`./netsuite-libs/dayjs.js`, `${d}/netsuite-libs/dayjs.js`)
+    copySync(`./netsuite-libs/ts-serializable.js`, `${d}/netsuite-libs/ts-serializable.js`)
+    const files = readdirSync(d);
+    const jsFiles = files
+        .filter(file => path.extname(file) === `.js`)
+    for (const f of jsFiles) {
+        const fileContents = readFileSync(`${d}/${f}`, `utf8`)
+            .replace(/"netsuite-libs/g, '"./netsuite-libs')
+            .replace(/"dayjs"/g, '"./netsuite-libs/dayjs"')
+            .replace(/"ts-serializable"/g, '"./netsuite-libs/ts-serializable"');
+        if (fileContents.indexOf(`@NScriptType`) < 0) {
+            continue;
+        }
+        writeFileSync(`${d}/${f}`, fileContents);
+    }
+}
+
 export function buildNoRollup(){
     try {
         console.log(`Running linter`);
@@ -331,6 +350,10 @@ export function buildNoRollup(){
         console.log(`Running tsc...`);
         execSync(`tsc`, { stdio: `inherit` });
         console.log(`tsc completed\n`);
+
+        console.log(`Fixing imports...`);
+        fixJSImports();
+        console.log(`Fixing imports completed\n`);
 
     } catch (error) {
         console.error(`An error occurred: ${error}`);
