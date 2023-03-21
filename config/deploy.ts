@@ -314,6 +314,29 @@ export function build() {
     }
 }
 
+export function buildNoRollup(){
+    try {
+        console.log(`Running linter`);
+        execSync(`eslint --fix .eslintrc.js --ext .ts ./`);
+        console.log(`Linter completed\n`);
+
+        console.log(`Running tests`);
+        execSync(`jest`);
+        console.log(`Tests completed\n`);
+
+        console.log(`Making deployment files`);
+        makeConfigurationFiles();
+        console.log(`Deployment files created\n`);
+
+        console.log(`Running tsc...`);
+        execSync(`tsc`, { stdio: `inherit` });
+        console.log(`tsc completed\n`);
+
+    } catch (error) {
+        console.error(`An error occurred: ${error}`);
+    }
+}
+
 export function deploy() {
     build();
     console.log(`Running suitecloud project:deploy...`);
