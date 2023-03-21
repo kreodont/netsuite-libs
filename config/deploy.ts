@@ -322,10 +322,11 @@ function fixJSImports() {
     const jsFiles = files
         .filter(file => path.extname(file) === `.js`)
     for (const f of jsFiles) {
+        console.log(f)
         const fileContents = readFileSync(`${d}/${f}`, `utf8`)
             .replace(/"netsuite-libs/g, '"./netsuite-libs')
             .replace(/"dayjs"/g, '"./netsuite-libs/dayjs"')
-            .replace(/"jackson-js.js"/g, '"./netsuite-libs/jackson-js.js"');
+            .replace(/"jackson-js"/g, '"./netsuite-libs/jackson-js"');
         writeFileSync(`${d}/${f}`, fileContents);
     }
 }
@@ -358,7 +359,7 @@ export function buildNoRollup(){
 }
 
 export function deploy() {
-    build();
+    buildNoRollup();
     console.log(`Running suitecloud project:deploy...`);
     execSync(`suitecloud project:deploy`, { stdio: `inherit` });
     console.log(`Suitecloud project:deploy completed\n`);
