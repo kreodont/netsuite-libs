@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync  } from 'fs-extra';
+import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync, copySync  } from 'fs-extra';
 import path from 'path';
 
 class ScriptObject {
