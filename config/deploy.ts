@@ -367,7 +367,7 @@ export function deploy() {
 
 export function uploadFiles() {
     const projectName = path.basename(__dirname);
-    const files = readdirSync(`./src/FileCabinet/SuiteScripts/${projectName}/`);
+    const files = readdirSync(`./src/FileCabinet/SuiteScripts/${projectName}/`).filter(f=>f.endsWith('.js'));
     if (files.length === 0) {
         return;
     }
