@@ -330,11 +330,11 @@ function fixJSImports() {
     const libFiles = readdirSync(`${d}/netsuite-libs`).filter(file => path.extname(file) === `.js`)
     for (const f of libFiles) {
         console.log(f)
-        const fileContents = readFileSync(`${d}/${f}`, `utf8`)
+        const fileContents = readFileSync(`${d}/netsuite-libs/${f}`, `utf8`)
             .replace(/"dayjs"/g, '".dayjs"')
             .replace(/"jackson-js"/g, '".jackson-js"')
             .replace(/"sweetalert2"/g, '".sweetalert2"');
-        writeFileSync(`${d}/${f}`, fileContents);
+        writeFileSync(`${d}/netsuite-libs/${f}`, fileContents);
     }
 }
 
