@@ -59,3 +59,8 @@ NFT-SS2-*/
 # Project JSON, since everyone has his own name for deployment
 project.json
 
+# Compiled files
+*.js
+!*.config.js
+!.eslintrc.js
+
