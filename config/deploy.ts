@@ -309,7 +309,7 @@ export function build() {
     }
 }
 
-function fixJSImports() {
+export function fixJSImports() {
     const d = `./src/FileCabinet/SuiteScripts/${path.basename(__dirname)}`
     copySync(`./netsuite-libs/dayjs.js`, `${d}/netsuite-libs/dayjs.js`)
     copySync(`./netsuite-libs/jackson-js.js`, `${d}/netsuite-libs/jackson-js.js`)
@@ -318,7 +318,7 @@ function fixJSImports() {
     const jsFiles = files
         .filter(file => path.extname(file) === `.js`)
     for (const f of jsFiles) {
-        console.log(f)
+        console.log(`${d}/${f}`)
         const fileContents = readFileSync(`${d}/${f}`, `utf8`)
             .replace(/"netsuite-libs/g, '"./netsuite-libs')
             .replace(/"dayjs"/g, '"./netsuite-libs/dayjs"')
@@ -329,7 +329,10 @@ function fixJSImports() {
 
     const libFiles = readdirSync(`${d}/netsuite-libs`).filter(file => path.extname(file) === `.js`)
     for (const f of libFiles) {
-        console.log(f)
+        if (['dayjs.js', 'jackson-js.js', 'sweetalert2.js'].indexOf(f) >= 0) {
+            continue
+        }
+        console.log(`${d}/netsuite-libs/${f}`)
         const fileContents = readFileSync(`${d}/netsuite-libs/${f}`, `utf8`)
             .replace(/"dayjs"/g, '".dayjs"')
             .replace(/"jackson-js"/g, '".jackson-js"')
