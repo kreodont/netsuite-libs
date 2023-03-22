@@ -333,7 +333,7 @@ function fixJSImports() {
 }
 
 export function copyLibs() {
-    copySync(`./node_modules/netsuite-libs/config/.`, `./`, {recursive: true});
+    copySync(`./node_modules/netsuite-libs/config/.`, `./`);
     ensureDirSync(`./netsuite-libs`);
     copySync(`./node_modules/netsuite-libs/*.ts`, `./netsuite-libs`);
     copySync(`./node_modules/netsuite-libs/dayjs.min.js`, `./netsuite-libs/dayjs.js`);
