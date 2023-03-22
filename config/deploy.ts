@@ -258,7 +258,7 @@ function removeFolderSync(folderPath: string): void {
     }
 }
 
-function makeConfigurationFiles() {
+function makeConfigurationFiles(): string[] {
     const outputDirectory = `./src/FileCabinet/SuiteScripts`;
     removeFolderSync(outputDirectory);
     ensureDirSync(`./src/Objects/`);
@@ -279,11 +279,11 @@ function makeConfigurationFiles() {
         );
         if (script.errors.length > 0) {
             console.log(script.errors);
-            throw `Fix the errors above`;
+            return script.errors;
         }
         writeFileSync(`./src/Objects/${script.scriptid}.xml`, script.xml());
     }
-    // execSync(`suitecloud project:adddependencies`);
+    return []
 }
 
 export function build() {
@@ -347,7 +347,10 @@ export function buildNoRollup(){
         console.log(`Tests completed\n`);
 
         console.log(`Making deployment files`);
-        makeConfigurationFiles();
+        const errors = makeConfigurationFiles();
+        if (errors.length > 0) {
+            return;
+        }
         console.log(`Deployment files created\n`);
 
         console.log(`Running tsc...`);
