@@ -34,21 +34,19 @@ class ScriptObject {
             this.errors.push(`Missing tag @NApiVersion`);
         }
         this.suiteScriptVersion = scriptVersion && scriptVersion.length > 1 ? scriptVersion[1].trim() : ``;
-        // if (this.suiteScriptVersion !== `2.1`) {
-        //     this.errors.push(`@NApiVersion must be "2.1", "${this.suiteScriptVersion}" specified`);
-        // }
 
         const scriptName = /@NName (.+)/.exec(fileText);
         this.name = scriptName && scriptName.length > 1 ? scriptName[1] : ``;
         if (this.name.length === 0) {
-            this.errors.push(`@NName tag must be specified`);
+            this.name = fileName.replace(`.js`, ``);
+            // this.errors.push(`@NName tag must be specified`);
         }
 
-        // const scriptDescription = /@NDescription (.+)/.exec(fileText);
-        // this.description = scriptDescription && scriptDescription.length > 1 ? scriptDescription[1] : ``;
-        // if (this.description.length === 0) {
-        //     this.errors.push(`@NDescription tag must be specified`);
-        // }
+        const scriptDescription = /@NDescription (.+)/.exec(fileText);
+        this.description = scriptDescription && scriptDescription.length > 1 ? scriptDescription[1] : ``;
+        if (this.description.length === 0) {
+            this.errors.push(`@NDescription tag must be specified`);
+        }
 
         this.scriptid = `customscript_` + fileName
             .replace(`.js`, ``)
