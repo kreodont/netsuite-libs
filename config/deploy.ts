@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync, copySync, glob  } from 'fs-extra';
+import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync, copySync  } from 'fs-extra';
 import path = require('path');
 
 class ScriptObject {
@@ -335,23 +335,7 @@ function fixJSImports() {
 export function copyLibs() {
     copySync(`./node_modules/netsuite-libs/config/.`, `./`, {recursive: true});
     ensureDirSync(`./netsuite-libs`);
-    glob(`./node_modules/netsuite-libs/*.ts`, (error, files) => {
-        if (error) {
-            console.error(`Failed to find files: ${error.message}`);
-            return;
-        }
-        files.forEach(file => {
-            const fileName = path.basename(file);
-            const destinationFilePath = path.join(`./netsuite-libs`, fileName);
-
-            try {
-                copySync(file, destinationFilePath);
-                console.log(`Successfully copied "${file}" to "${destinationFilePath}"`);
-            } catch (copyError) {
-                console.error(`Failed to copy file: ${copyError.message}`);
-            }
-        });
-    });
+    copySync(`./node_modules/netsuite-libs/*.ts`, `./netsuite-libs`);
     copySync(`./node_modules/netsuite-libs/dayjs.min.js`, `./netsuite-libs/dayjs.js`);
     copySync(`./node_modules/netsuite-libs/jackson-js.js`, `./netsuite-libs/jackson-js.js`);
     copySync(`./node_modules/netsuite-libs/sweetalert2.js`, `./netsuite-libs/sweetalert2.js`)
