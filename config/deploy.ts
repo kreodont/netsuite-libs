@@ -94,9 +94,6 @@ class ScriptObject {
         if (this.type === ScriptType.MapReduceScript) {
             const variables = /@NVariables(.*)/.exec(fileText);
             if (!variables) {
-                this.errors.push(`For MapReduce scripts at least one NVariables must be specified`);
-            }
-            else {
                 this.mapReduceVariables = variables[1].split(`,`).map(variable => variable.trim());
                 this.mapReduceVariables.filter(v => v.length > 30).map(v => this.errors.push(`Map Reduce variable "${v}" name is too long. Should not be longer than 30 symbols (currently ${v.length})`));
             }
