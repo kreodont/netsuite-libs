@@ -335,7 +335,7 @@ function fixJSImports() {
 export function copyLibs() {
     copySync(`./node_modules/netsuite-libs/config/.`, `./`);
     ensureDirSync(`./netsuite-libs`);
-    copySync(`./node_modules/netsuite-libs/*.ts`, `./netsuite-libs`);
+    copySync(`./node_modules/netsuite-libs/`, `./netsuite-libs`, { filter: f => f.endsWith(`.ts`) });
     copySync(`./node_modules/netsuite-libs/dayjs.min.js`, `./netsuite-libs/dayjs.js`);
     copySync(`./node_modules/netsuite-libs/jackson-js.js`, `./netsuite-libs/jackson-js.js`);
     copySync(`./node_modules/netsuite-libs/sweetalert2.js`, `./netsuite-libs/sweetalert2.js`)
