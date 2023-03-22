@@ -50,11 +50,6 @@ Thumbs.db
 # Compiled JS files
 FileCabinet/
 
-# Object, XML files
-Objects/
-
-# NFT folder
-NFT-SS2-*/
 
 # Project JSON, since everyone has his own name for deployment
 project.json
