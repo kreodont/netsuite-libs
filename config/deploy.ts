@@ -49,6 +49,7 @@ class ScriptObject {
         }
 
         this.scriptid = `customscript_` + fileName
+            .replace(`customscript_`, ``) // in case there is already customscript_ in file name
             .replace(`.js`, ``)
             .slice(0, 27)
             .replace(/_+$/, ``);
