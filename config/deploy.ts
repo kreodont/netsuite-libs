@@ -278,7 +278,9 @@ function makeConfigurationFiles(): string[] {
             `SuiteScripts/${path.basename(__dirname)}`,
         );
         if (script.errors.length > 0) {
-            console.log(script.errors);
+            for (const e of script.errors) {
+                console.log(`${f}: ${e}`)
+            }
             return script.errors;
         }
         writeFileSync(`./src/Objects/${script.scriptid}.xml`, script.xml());
