@@ -2,9 +2,9 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 
 export default {
-    input: 'node_modules/dayjs/dayjs.min.js',
+    input: 'node_modules/ts-serializable/dist/index.js',
     output: {
-        file: './dayjs.js',
+        file: './ts-serializable.js',
         format: 'amd', // Use AMD format for compatibility with NetSuite's module system
         sourcemap: false,
     },

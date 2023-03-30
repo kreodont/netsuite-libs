@@ -391,18 +391,19 @@ export function deploy() {
 }
 
 export function uploadFiles() {
+    console.log(`Running tsc...`);
+    execSync(`tsc`, { stdio: `inherit` });
+    console.log(`tsc completed\n`);
+
+    console.log(`Fixing imports...`);
+    fixJSImports();
+    console.log(`Fixing imports completed\n`);
+
     const projectName = path.basename(__dirname);
     const files = readdirSync(`./src/FileCabinet/SuiteScripts/${projectName}/`).filter(f=>f.endsWith('.js'));
     if (files.length === 0) {
         return;
     }
-    console.log(`Running tests`);
-    execSync(`jest`);
-    console.log(`Tests completed\n`);
-
-    console.log(`tsc...`);
-    execSync(`tsc`, { stdio: `inherit` });
-    console.log(`tsc completed\n`);
 
     console.log(`Uploading files`);
     const uploadString = files.map(file => `"/SuiteScripts/${projectName}/${file}"`).join(` `);
