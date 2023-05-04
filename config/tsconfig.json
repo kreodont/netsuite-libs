@@ -3,7 +3,7 @@
     "target": "esnext",
     "module": "AMD",
     "moduleResolution": "node",
-    "strict": false,
+    "strict": true,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "outDir": "./src/FileCabinet/SuiteScripts",
