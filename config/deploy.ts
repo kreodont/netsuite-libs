@@ -313,10 +313,11 @@ export function build() {
 }
 
 export function fixJSImports() {
+    const supportedLibs = [`dayjs.js`, `sweetalert2.js`, `ts-serializable.js`]
     const d = `./src/FileCabinet/SuiteScripts/${path.basename(__dirname)}`
-    copySync(`./netsuite-libs/dayjs.js`, `${d}/netsuite-libs/dayjs.js`)
-    copySync(`./netsuite-libs/jackson-js.js`, `${d}/netsuite-libs/jackson-js.js`)
-    copySync(`./netsuite-libs/sweetalert2.js`, `${d}/netsuite-libs/sweetalert2.js`)
+    for (const lib of supportedLibs) {
+        copySync(`./netsuite-libs/${lib}`, `${d}/netsuite-libs/${lib}`)
+    }
     const files = readdirSync(d);
     const jsFiles = files
         .filter(file => path.extname(file) === `.js`)
@@ -325,20 +326,20 @@ export function fixJSImports() {
         const fileContents = readFileSync(`${d}/${f}`, `utf8`)
             .replace(/"netsuite-libs/g, '"./netsuite-libs')
             .replace(/"dayjs"/g, '"./netsuite-libs/dayjs"')
-            .replace(/"jackson-js"/g, '"./netsuite-libs/jackson-js"')
+            .replace(/"ts-serializable.js"/g, '"./netsuite-libs/ts-serializable.js"')
             .replace(/"sweetalert2"/g, '"./netsuite-libs/sweetalert2"');
         writeFileSync(`${d}/${f}`, fileContents);
     }
 
     const libFiles = readdirSync(`${d}/netsuite-libs`).filter(file => path.extname(file) === `.js`)
     for (const f of libFiles) {
-        if (['dayjs.js', 'jackson-js.js', 'sweetalert2.js'].indexOf(f) >= 0) {
+        if (supportedLibs.indexOf(f) >= 0) {
             continue
         }
         console.log(`${d}/netsuite-libs/${f}`)
         const fileContents = readFileSync(`${d}/netsuite-libs/${f}`, `utf8`)
             .replace(/"dayjs"/g, '"./dayjs"')
-            .replace(/"jackson-js"/g, '"./jackson-js"')
+            .replace(/"ts-serializable"/g, '"./ts-serializable"')
             .replace(/"sweetalert2"/g, '"./sweetalert2"');
         writeFileSync(`${d}/netsuite-libs/${f}`, fileContents);
     }
@@ -349,7 +350,7 @@ export function copyLibs() {
     ensureDirSync(`./netsuite-libs`);
     copySync(`./node_modules/netsuite-libs/`, `./netsuite-libs`, { filter: f => f.endsWith(`.ts`) });
     copySync(`./node_modules/netsuite-libs/dayjs.js`, `./netsuite-libs/dayjs.js`);
-    copySync(`./node_modules/netsuite-libs/jackson-js.js`, `./netsuite-libs/jackson-js.js`);
+    copySync(`./node_modules/netsuite-libs/ts-serializable.js`, `./netsuite-libs/ts-serializable.js`);
     copySync(`./node_modules/netsuite-libs/sweetalert2.js`, `./netsuite-libs/sweetalert2.js`)
 }
 

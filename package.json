@@ -9,24 +9,24 @@
     "rollup": "rollup -c"
   },
   "devDependencies": {
-    "jest": "^29.0.0",
-    "ts-jest": "^29.0.5",
-    "@types/jest": "^29.5.0",
-    "typescript": "^5.0.2",
     "@hitc/netsuite-types": "^2023.1.3",
-    "rollup": "^3.20.0",
-    "@rollup/plugin-node-resolve": "^15.0.1",
     "@rollup/plugin-commonjs": "^24.0.1",
-    "ts-serializable": "^3.0.28"
-
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@types/jest": "^29.5.0",
+    "jest": "^29.0.0",
+    "rollup": "^3.20.0",
+    "ts-jest": "^29.0.5",
+    "ts-serializable": "^3.0.28",
+    "typescript": "^5.0.2"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "dayjs": "^1.11.7",
-    "sweetalert2": "11.4.8",
-    "jackson-js": "^1.1.0"
+    "fs-extra": "^11.1.1",
+    "jackson-js": "^1.1.0",
+    "sweetalert2": "11.4.8"
   },
   "lint-staged": {
     "*.ts": [
