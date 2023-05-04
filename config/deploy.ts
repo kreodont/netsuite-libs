@@ -326,8 +326,9 @@ export function fixJSImports() {
         const fileContents = readFileSync(`${d}/${f}`, `utf8`)
             .replace(/"netsuite-libs/g, '"./netsuite-libs')
             .replace(/"dayjs"/g, '"./netsuite-libs/dayjs"')
-            .replace(/"ts-serializable.js"/g, '"./netsuite-libs/ts-serializable.js"')
-            .replace(/"sweetalert2"/g, '"./netsuite-libs/sweetalert2"');
+            .replace(/"ts-serializable"/g, '"./netsuite-libs/ts-serializable"')
+            .replace(/"sweetalert2"/g, '"./netsuite-libs/sweetalert2"')
+            .replace(/, "reflect-metadata"/g, '');
         writeFileSync(`${d}/${f}`, fileContents);
     }
 
