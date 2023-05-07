@@ -7,10 +7,33 @@ import {error} from 'N/log';
 import file from 'N/file';
 import {runtime} from 'N';
 import {getBaseURL} from './Helpers';
+import {EntryPoints} from "N/types";
+
+export type ScriptContext =
+    | EntryPoints.Scheduled.executeContext
+    | EntryPoints.WorkflowAction.onActionContext
+    | EntryPoints.RESTlet.get
+    | EntryPoints.RESTlet.post
+    | EntryPoints.RESTlet.put
+    | EntryPoints.RESTlet.delete_
+    | EntryPoints.MassUpdate.eachContext
+    | EntryPoints.MapReduce.mapContext
+    | EntryPoints.MapReduce.reduceContext
+    | EntryPoints.MapReduce.summarizeContext
+    | EntryPoints.MapReduce.getInputDataContext
+    | EntryPoints.Suitelet.onRequestContext
+    | EntryPoints.UserEvent.beforeLoadContext
+    | EntryPoints.UserEvent.beforeSubmitContext
+    | EntryPoints.UserEvent.afterSubmitContext
+    | EntryPoints.Client.pageInitContext
+    | EntryPoints.Client.sublistChangedContext
+    | EntryPoints.Client.fieldChangedContext
+    | EntryPoints.Client.saveRecordContext
+    | null;
 
 interface ScriptInterface {
-    logicFunction: (impactedRecords: {[key: string]: Serializable}, logs: string[]) => Operation[]
-    loadRecordsFunction: (logs: string[]) => {[key: string]: Serializable}
+    logicFunction: (impactedRecords: {[key: string]: Serializable | null | string}, logs?: string[]) => Operation[]
+    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: Serializable | null | string}
     triggerName?: string
 }
 function formatDateWithoutSeparator(date: Date) {
@@ -30,7 +53,7 @@ export class Script extends Serializable implements ScriptInterface{
     id: string;
 
     @jsonProperty([Serializable])
-    impactedRecords?: {[key: string]: Serializable};
+    impactedRecords?: {[key: string]: Serializable | null | string};
 
     @jsonProperty([String])
     logs: string[];
@@ -38,9 +61,9 @@ export class Script extends Serializable implements ScriptInterface{
     @jsonProperty([Serializable])
     operations: Operation[];
 
-    logicFunction: (impactedRecords: {[key: string]: Serializable}, logs: string[]) => Operation[];
+    logicFunction: (impactedRecords: {[key: string]: Serializable | null | string}, logs?: string[]) => Operation[];
 
-    loadRecordsFunction: (logs: string[]) => {[key: string]: Serializable};
+    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: Serializable | null | string};
 
     triggerName: string;
 
@@ -94,12 +117,12 @@ export class Script extends Serializable implements ScriptInterface{
         return operationsApplied;
     }
 
-    run(date: Date): void {
+    run(context: ScriptContext, date: Date): void {
         const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`;
         try {
             log(`Starting script ${this.id}. Full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
             this.logs.push(`Loading impacted records`);
-            this.impactedRecords = this.loadRecordsFunction(this.logs);
+            this.impactedRecords = this.loadRecordsFunction(context, this.logs);
             for (const recName in this.impactedRecords) {
                 this.logs.push(`${recName}: ${JSON.stringify(this.impactedRecords[recName])}`);
             }
