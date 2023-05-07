@@ -6,7 +6,7 @@
  *  1.0      29th March 2021   Dmitry Masanov     Script Created
  *
  */
-import {query} from 'N';
+import {query, runtime} from 'N';
 
 export function chunks<T>(inputArray: Array<T>, chunkSize: number): Array<T>[] {
     /*
@@ -27,6 +27,11 @@ export function roundNumber(n: number, digitsAfterComma: number): number {
         Math.round(n * Math.pow(10, digitsAfterComma)) /
         Math.pow(10, digitsAfterComma)
     );
+}
+
+export function getBaseURL(): string {
+    const companyId = runtime.accountId.toLowerCase().replace(/_/g, `-`);
+    return `https://${companyId}.app.netsuite.com`;
 }
 
 export function fetchOneValue(sqlString: string): string | null {

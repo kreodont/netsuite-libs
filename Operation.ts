@@ -4,16 +4,16 @@ import {Error} from './Error';
 
 interface OperationInterface {
     details: string
-    execute: () => Error[]
-    fallback?: () => Error[]
+    execute: (logs: string[]) => Error[]
+    fallback?: (logs: string[]) => Error[]
 }
 export class Operation extends Serializable implements OperationInterface{
     @jsonProperty(String)
     details: string
 
-    execute: () => Error[]
+    execute: (logs: string[]) => Error[]
 
-    fallback?: () => Error[]
+    fallback?: (logs: string[]) => Error[]
     constructor(args: OperationInterface) {
         super();
         this.details = args.details

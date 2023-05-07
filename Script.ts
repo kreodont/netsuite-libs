@@ -3,6 +3,8 @@ import "reflect-metadata";
 import {Operation} from './Operation';
 import {log} from './Logger'
 import {writeFile} from './Files';
+import {error} from 'N/log';
+import file from 'N/file';
 
 interface ScriptInterface {
 
@@ -10,7 +12,7 @@ interface ScriptInterface {
     id: number
     logicFunction: (impactedRecords: {[key: string]: Serializable}, logs: string[]) => Operation[]
     loadRecordsFunction: (logs: string[]) => {[key: string]: Serializable}
-
+    triggerName?: string
 }
 function formatDateWithoutSeparator(date: Date) {
     const year = date.getFullYear();
@@ -43,6 +45,8 @@ export class Script extends Serializable implements ScriptInterface{
 
     loadRecordsFunction: (logs: string[]) => {[key: string]: Serializable}
 
+    triggerName: string
+
     constructor(args: ScriptInterface) {
         super();
         this.id = args.id
@@ -52,6 +56,7 @@ export class Script extends Serializable implements ScriptInterface{
         this.impactedRecords = undefined
         this.logicFunction = args.logicFunction
         this.loadRecordsFunction = args.loadRecordsFunction
+        this.triggerName = args.triggerName ? args.triggerName : ``
     }
 
     applyOperations(): number {
@@ -62,12 +67,13 @@ export class Script extends Serializable implements ScriptInterface{
         let operationsApplied = 0
         for (const op of this.operations) {
             this.logs.push(JSON.stringify(op))
-            const errors = op.execute()
+            const errors = op.execute(this.logs)
             if (errors.length > 0) {
                 let needExit = false;
                 let needException = false;
                 let exceptionText = ``
                 for (const e of errors) {
+                    log(e.text, 'ERROR', 0, error);
                     this.logs.push(JSON.stringify(e))
                     if (e.stop) {
                         needExit = true
@@ -78,7 +84,7 @@ export class Script extends Serializable implements ScriptInterface{
                     }
                 }
 
-                if (op.fallback) {op.fallback()}
+                if (op.fallback) {op.fallback(this.logs)}
 
                 if (needExit) {
                     return operationsApplied;
@@ -93,9 +99,9 @@ export class Script extends Serializable implements ScriptInterface{
     }
 
     run(date: Date): void {
-        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}.txt`
+        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}`
         try {
-            log(`Starting script ${this.name}. Full logs in SuiteScripts/Logs/${fileName}`);
+            log(`Starting script ${this.name}. Full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
             this.logs.push(`Loading impacted records`)
             this.impactedRecords = this.loadRecordsFunction(this.logs)
             for (const recName in this.impactedRecords) {
@@ -107,10 +113,14 @@ export class Script extends Serializable implements ScriptInterface{
             this.logs.push(`${this.operations.length} operations calculated`)
             this.logs.push(`Applying operations`)
             const operationsApplied = this.applyOperations()
-            writeFile(fileName, this.logs.join('\n'), 'Logs', this.logs)
-            log(`Completed. ${operationsApplied} operations applied`)
+            const fileIds = writeFile(fileName, this.logs.join('\n'), 'Logs', this.logs)
+            if (fileIds.length === 0) {
+                log(`Failed to save the log file: ${fileName}`, fileName, 0, error)
+            }
+            log(`Completed. ${operationsApplied} operations applied. Logs: ${file.load({id: fileIds[0]}).url}`)
         }
         catch (e) {
+            log(JSON.stringify(e))
             this.logs.push(JSON.stringify(e))
             writeFile(fileName, this.logs.join('\n'), 'Logs', this.logs)
             throw e
