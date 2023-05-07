@@ -1,11 +1,12 @@
 import {jsonProperty, Serializable} from 'ts-serializable';
 import "reflect-metadata";
 import {Operation} from './Operation';
-import {log} from './Logger'
+import {log} from './Logger';
 import {writeFile} from './Files';
 import {error} from 'N/log';
 import file from 'N/file';
 import {runtime} from 'N';
+import {getBaseURL} from './Helpers';
 
 interface ScriptInterface {
     logicFunction: (impactedRecords: {[key: string]: Serializable}, logs: string[]) => Operation[]
@@ -14,111 +15,111 @@ interface ScriptInterface {
 }
 function formatDateWithoutSeparator(date: Date) {
     const year = String(date.getFullYear());
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-    const milliseconds = String(date.getMilliseconds()).padStart(3, '0');
+    const month = String(date.getMonth() + 1).padStart(2, `0`);
+    const day = String(date.getDate()).padStart(2, `0`);
+    const hours = String(date.getHours()).padStart(2, `0`);
+    const minutes = String(date.getMinutes()).padStart(2, `0`);
+    const seconds = String(date.getSeconds()).padStart(2, `0`);
+    const milliseconds = String(date.getMilliseconds()).padStart(3, `0`);
 
     return year + month + day + hours + minutes + seconds + milliseconds;
 }
 
 export class Script extends Serializable implements ScriptInterface{
     @jsonProperty(String)
-    id: string
+    id: string;
 
     @jsonProperty([Serializable])
-    impactedRecords?: {[key: string]: Serializable}
+    impactedRecords?: {[key: string]: Serializable};
 
     @jsonProperty([String])
-    logs: string[]
+    logs: string[];
 
     @jsonProperty([Serializable])
-    operations: Operation[]
+    operations: Operation[];
 
-    logicFunction: (impactedRecords: {[key: string]: Serializable}, logs: string[]) => Operation[]
+    logicFunction: (impactedRecords: {[key: string]: Serializable}, logs: string[]) => Operation[];
 
-    loadRecordsFunction: (logs: string[]) => {[key: string]: Serializable}
+    loadRecordsFunction: (logs: string[]) => {[key: string]: Serializable};
 
-    triggerName: string
+    triggerName: string;
 
     constructor(args: ScriptInterface) {
         super();
-        this.id = runtime.getCurrentScript().id
-        this.logs = []
-        this.operations = []
-        this.impactedRecords = undefined
-        this.logicFunction = args.logicFunction
-        this.loadRecordsFunction = args.loadRecordsFunction
-        this.triggerName = args.triggerName ? args.triggerName : ``
+        this.id = runtime.getCurrentScript().id;
+        this.logs = [];
+        this.operations = [];
+        this.impactedRecords = undefined;
+        this.logicFunction = args.logicFunction;
+        this.loadRecordsFunction = args.loadRecordsFunction;
+        this.triggerName = args.triggerName ? args.triggerName : ``;
     }
 
     applyOperations(): number {
         if (this.operations.length === 0) {
-            this.logs.push(`0 operations, nothing to do`)
-            return 0
+            this.logs.push(`0 operations, nothing to do`);
+            return 0;
         }
-        let operationsApplied = 0
+        const operationsApplied = 0;
         for (const op of this.operations) {
-            this.logs.push(JSON.stringify(op))
-            const errors = op.execute(this.logs)
+            this.logs.push(JSON.stringify(op));
+            const errors = op.execute(this.logs);
             if (errors.length > 0) {
                 let needExit = false;
                 let needException = false;
-                let exceptionText = ``
+                let exceptionText = ``;
                 for (const e of errors) {
-                    log(e.text, 'ERROR', 0, error);
-                    this.logs.push(JSON.stringify(e))
+                    log(e.text, `ERROR`, 0, error);
+                    this.logs.push(JSON.stringify(e));
                     if (e.stop) {
-                        needExit = true
+                        needExit = true;
                     }
                     if (e.throwException) {
-                        needException = true
-                        exceptionText += `\n${e.text}`
+                        needException = true;
+                        exceptionText += `\n${e.text}`;
                     }
                 }
 
-                if (op.fallback) {op.fallback(this.logs)}
+                if (op.fallback) {op.fallback(this.logs);}
 
                 if (needExit) {
                     return operationsApplied;
                 }
 
                 if (needException) {
-                    throw exceptionText
+                    throw exceptionText;
                 }
             }
         }
-        return operationsApplied
+        return operationsApplied;
     }
 
     run(date: Date): void {
-        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`
+        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`;
         try {
             log(`Starting script ${this.id}. Full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
-            this.logs.push(`Loading impacted records`)
-            this.impactedRecords = this.loadRecordsFunction(this.logs)
+            this.logs.push(`Loading impacted records`);
+            this.impactedRecords = this.loadRecordsFunction(this.logs);
             for (const recName in this.impactedRecords) {
-                this.logs.push(`${recName}: ${JSON.stringify(this.impactedRecords[recName])}`)
+                this.logs.push(`${recName}: ${JSON.stringify(this.impactedRecords[recName])}`);
             }
-            this.logs.push(`Impacted records loaded`)
-            this.logs.push(`Calculating operations`)
-            this.operations = this.logicFunction(this.impactedRecords, this.logs)
-            this.logs.push(`${this.operations.length} operations calculated`)
-            this.logs.push(`Applying operations`)
-            const operationsApplied = this.applyOperations()
-            const fileIds = writeFile(fileName, this.logs.join('\n'), 'Logs', this.logs)
+            this.logs.push(`Impacted records loaded`);
+            this.logs.push(`Calculating operations`);
+            this.operations = this.logicFunction(this.impactedRecords, this.logs);
+            this.logs.push(`${this.operations.length} operations calculated`);
+            this.logs.push(`Applying operations`);
+            const operationsApplied = this.applyOperations();
+            const fileIds = writeFile(fileName, this.logs.join(`\n`), `Logs`, this.logs);
             if (fileIds.length === 0) {
-                log(`Failed to save the log file: ${fileName}`, fileName, 0, error)
+                log(`Failed to save the log file: ${fileName}`, fileName, 0, error);
             }
-            log(`Completed. ${operationsApplied} operations applied. Logs: ${file.load({id: fileIds[0]}).url}`)
+            log(`Completed. ${operationsApplied} operations applied. Logs: ${getBaseURL()}${file.load({id: fileIds[0]}).url}`, fileName);
         }
         catch (e) {
-            log(JSON.stringify(e))
-            this.logs.push(JSON.stringify(e))
-            writeFile(fileName, this.logs.join('\n'), 'Logs', this.logs)
-            throw e
+            log(JSON.stringify(e));
+            this.logs.push(JSON.stringify(e));
+            writeFile(fileName, this.logs.join(`\n`), `Logs`, this.logs);
+            throw e;
         }
     }
 }
