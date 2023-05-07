@@ -356,7 +356,7 @@ export function copyLibs() {
     copySync(`./node_modules/netsuite-libs/sweetalert2.js`, `./netsuite-libs/sweetalert2.js`)
 }
 
-export function buildNoRollup(){
+export function buildNoRollup(): number{
     try {
         console.log(`Running linter`);
         try {
@@ -379,7 +379,7 @@ export function buildNoRollup(){
         console.log(`Making deployment files`);
         const errors = makeConfigurationFiles();
         if (errors.length > 0) {
-            return;
+            return 1;
         }
         console.log(`Deployment files created\n`);
 
@@ -395,14 +395,19 @@ export function buildNoRollup(){
         console.log(`Fixing imports...`);
         fixJSImports();
         console.log(`Fixing imports completed\n`);
+        return 0
 
     } catch (error) {
         console.error(`An error occurred: ${error}`);
+        return 1
     }
 }
 
 export function deploy() {
-    buildNoRollup();
+    const result = buildNoRollup();
+    if (result !== 0) {
+        return result
+    }
     console.log(`Running suitecloud project:deploy...`);
     execSync(`suitecloud project:deploy`, { stdio: `inherit` });
     console.log(`Suitecloud project:deploy completed\n`);

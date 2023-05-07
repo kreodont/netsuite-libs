@@ -5,11 +5,9 @@ import {log} from './Logger'
 import {writeFile} from './Files';
 import {error} from 'N/log';
 import file from 'N/file';
+import {runtime} from 'N';
 
 interface ScriptInterface {
-
-    name: string
-    id: number
     logicFunction: (impactedRecords: {[key: string]: Serializable}, logs: string[]) => Operation[]
     loadRecordsFunction: (logs: string[]) => {[key: string]: Serializable}
     triggerName?: string
@@ -27,10 +25,8 @@ function formatDateWithoutSeparator(date: Date) {
 }
 
 export class Script extends Serializable implements ScriptInterface{
-    @jsonProperty(Number)
-    id: number
     @jsonProperty(String)
-    name: string
+    id: string
 
     @jsonProperty([Serializable])
     impactedRecords?: {[key: string]: Serializable}
@@ -49,8 +45,7 @@ export class Script extends Serializable implements ScriptInterface{
 
     constructor(args: ScriptInterface) {
         super();
-        this.id = args.id
-        this.name = args.name
+        this.id = runtime.getCurrentScript().id
         this.logs = []
         this.operations = []
         this.impactedRecords = undefined
@@ -99,9 +94,9 @@ export class Script extends Serializable implements ScriptInterface{
     }
 
     run(date: Date): void {
-        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}`
+        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`
         try {
-            log(`Starting script ${this.name}. Full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
+            log(`Starting script ${this.id}. Full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
             this.logs.push(`Loading impacted records`)
             this.impactedRecords = this.loadRecordsFunction(this.logs)
             for (const recName in this.impactedRecords) {
