@@ -341,7 +341,8 @@ export function fixJSImports() {
         const fileContents = readFileSync(`${d}/netsuite-libs/${f}`, `utf8`)
             .replace(/"dayjs"/g, '"./dayjs"')
             .replace(/"ts-serializable"/g, '"./ts-serializable"')
-            .replace(/"sweetalert2"/g, '"./sweetalert2"');
+            .replace(/"sweetalert2"/g, '"./sweetalert2"')
+            .replace(/, "reflect-metadata"/g, '');
         writeFileSync(`${d}/netsuite-libs/${f}`, fileContents);
     }
 }
@@ -358,11 +359,21 @@ export function copyLibs() {
 export function buildNoRollup(){
     try {
         console.log(`Running linter`);
-        execSync(`eslint --fix .eslintrc.js --ext .ts ./`);
+        try {
+            execSync(`eslint --fix .eslintrc.js --ext .ts ./`, { stdio: `inherit` });
+        }
+        catch {
+            return 1;
+        }
         console.log(`Linter completed\n`);
 
         console.log(`Running tests`);
-        execSync(`jest`);
+        try {
+            execSync(`jest`, { stdio: `inherit` });
+        }
+        catch {
+            return 1
+        }
         console.log(`Tests completed\n`);
 
         console.log(`Making deployment files`);
@@ -373,7 +384,12 @@ export function buildNoRollup(){
         console.log(`Deployment files created\n`);
 
         console.log(`Running tsc...`);
-        execSync(`tsc`, { stdio: `inherit` });
+        try {
+            execSync(`tsc`, { stdio: `inherit` });
+        }
+        catch {
+            return 1;
+        }
         console.log(`tsc completed\n`);
 
         console.log(`Fixing imports...`);
