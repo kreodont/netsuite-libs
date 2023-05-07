@@ -49,6 +49,6 @@ export function log(
     }
     const dashes = repeatString(`_`, dashesQuantity);
     for (const chunk of chunks(details.split(''), 3950)) {
-        f({ title: title, details: dashes + chunk });
+        f({ title: title, details: dashes + chunk.join('') });
     }
 }
