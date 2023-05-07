@@ -2,9 +2,10 @@ import file from 'N/file';
 import {runtime} from "N";
 import { fetchOneValue } from './Helpers';
 
-export function writeFileInCurrentDirectory(
+export function writeFile(
     desiredOutputFileName: string,
     fileContent: string,
+    directoryName?: string, // If not specified, current script directory is used
     logs?: string[]
 ): number[] {
     function stringChunks(initialString: string): string[] {
@@ -19,9 +20,17 @@ export function writeFileInCurrentDirectory(
         return outputStrings;
     }
     const createdFilesIds: number[] = [];
-    const sql = `select folder from file where name = '${runtime.getCurrentScript().id.replace('customscript_', '')}.js'`;
-    logs?.push(sql);
-    const folderId = fetchOneValue(sql);
+    let folderId: string | null
+    if (!directoryName) {
+        const sql = `select folder from file where name = '${runtime.getCurrentScript().id.replace('customscript_', '')}.js'`;
+        logs?.push(sql);
+        folderId = fetchOneValue(sql);
+    }
+    else {
+        const sql = `SELECT id FROM mediaitemfolder WHERE name = '${directoryName}'`;
+        logs?.push(sql);
+        folderId = fetchOneValue(sql);
+    }
     if (!folderId) {
         logs?.push(`Folder not found`)
         return createdFilesIds;
