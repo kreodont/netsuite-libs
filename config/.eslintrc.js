@@ -16,7 +16,7 @@ module.exports = {
         tsconfigRootDir: `.`,
     },
     plugins: [`@typescript-eslint`, `import`],
-    ignorePatterns: [`src`, `*.d.ts`, `__tests__`, `.eslintrc.js`, `deploy.ts`, `Gulpfile.ts`],
+    ignorePatterns: [`src`, `*.d.ts`, `__tests__`, `__mocks__`, `.eslintrc.js`, `deploy.ts`, `Gulpfile.ts`],
     rules: {
         quotes: [`error`, `backtick`],
         semi: [`warn`, `always`],
