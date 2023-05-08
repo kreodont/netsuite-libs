@@ -4,10 +4,12 @@ import {Operation} from './Operation';
 import {log, LogArray} from './Logger';
 import {writeFile} from './Files';
 import {error} from 'N/log';
-import file from 'N/file';
+import {File} from 'N/file';
+import file from 'N/file'
 import {getCurrentScript} from 'N/runtime';
-import {getBaseURL} from './Helpers';
+import {getBaseURL, getSqlResultAsMap} from './Helpers';
 import {EntryPoints} from "N/types";
+import {email} from 'N';
 
 export type ScriptContext =
     | EntryPoints.Scheduled.executeContext
@@ -66,6 +68,7 @@ export class Script extends Serializable implements ScriptInterface{
     loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: Serializable | null | string};
 
     triggerName: string;
+    notifyOwner: boolean = false
 
     constructor(args: ScriptInterface) {
         super();
@@ -101,6 +104,9 @@ export class Script extends Serializable implements ScriptInterface{
                     if (e.throwException) {
                         needException = true;
                         exceptionText += `\n${e.text}`;
+                    }
+                    if (e.notify) {
+                        this.notifyOwner = true
                     }
                 }
 
@@ -142,6 +148,9 @@ export class Script extends Serializable implements ScriptInterface{
                 log(`Failed to save the log file: ${fileName}`, fileName, 0, error);
             }
             log(`Completed. ${operationsApplied} operations applied. Logs: ${getBaseURL()}${file.load({id: fileIds[0]}).url}`, fileName);
+            if (this.notifyOwner) {
+                notifyOwner('', this.id, file.load({id: fileIds[0]}), this.logs)
+            }
         }
         catch (e) {
             log(JSON.stringify(e));
@@ -149,5 +158,38 @@ export class Script extends Serializable implements ScriptInterface{
             writeFile(fileName, this.logs.join(`\n`), `Logs`, this.logs);
             throw e;
         }
+    }
+}
+
+export function notifyOwner(errorText: string, scriptId: string, attachment: File, logs?: string[]): void {
+    const sql = `select employee.id as owner_id, employee.email as owner_email, script.name as script_name from script join employee on script.owner = employee.id join file on file.id = script.scriptfile where script.scriptid = '${scriptId}'`;
+    const results = getSqlResultAsMap(sql, logs);
+    if (results === undefined) {
+        logs?.push(`Failed to run sql: ${sql}, results: ${JSON.stringify(results)}`);
+        return;
+    }
+    if (results.length < 1) {
+        logs?.push(`Failed to run sql: ${sql}, results: ${JSON.stringify(results)}`);
+        return;
+    }
+
+    const ownerId = Number(results[0][`owner_id`]);
+    const ownerEmail = String(results[0][`owner_email`]);
+    if (!ownerId || ownerEmail.length === 0) {
+        logs?.push(`Could not find ownerId or ownerEmail in ${JSON.stringify(results[0])}`);
+        return;
+    }
+    try {
+        email.send({
+            author: ownerId,
+            recipients: [`${ownerEmail}`],
+            subject: `Script "${results[0][`script_name`]}" failed`,
+            body: errorText,
+            attachments: [attachment],
+        });
+        logs?.push(`Email to ${ownerEmail} sent`);
+    } catch (e) {
+        logs?.push(`Could not send a mail: ${e}`);
+        return;
     }
 }
