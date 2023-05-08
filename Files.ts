@@ -27,7 +27,7 @@ export function writeFile(
         folderId = fetchOneValue(sql);
     }
     else {
-        const sql = `SELECT id FROM mediaitemfolder WHERE name = '${directoryName}'`;
+        const sql = `SELECT id FROM mediaitemfolder WHERE appfolder = '${directoryName}'`;
         logs?.push(sql);
         folderId = fetchOneValue(sql);
     }

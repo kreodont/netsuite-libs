@@ -137,7 +137,7 @@ export class Script extends Serializable implements ScriptInterface{
             this.logs.push(`${this.operations.length} operations calculated`);
             this.logs.push(`Applying operations`);
             const operationsApplied = this.applyOperations();
-            const fileIds = writeFile(fileName, this.logs.join(`\n`), `Logs`, this.logs);
+            const fileIds = writeFile(fileName, this.logs.join(`\n`), `SuiteScripts : Logs`, this.logs);
             if (fileIds.length === 0) {
                 log(`Failed to save the log file: ${fileName}`, fileName, 0, error);
             }
