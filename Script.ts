@@ -124,7 +124,11 @@ export class Script extends Serializable implements ScriptInterface{
             this.logs.push(`Loading impacted records`);
             this.impactedRecords = this.loadRecordsFunction(context, this.logs);
             for (const recName in this.impactedRecords) {
-                this.logs.push(`${recName}: ${JSON.stringify(this.impactedRecords[recName])}`);
+                let record = this.impactedRecords[recName];
+                if (typeof record !== `string`) {
+                    record = JSON.stringify(record);
+                }
+                this.logs.push(`${recName}: ${record}`);
             }
             this.logs.push(`Impacted records loaded`);
             this.logs.push(`Calculating operations`);
