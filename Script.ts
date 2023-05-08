@@ -5,7 +5,7 @@ import {log, LogArray} from './Logger';
 import {writeFile} from './Files';
 import {error} from 'N/log';
 import file from 'N/file';
-import {runtime} from 'N';
+import {getCurrentScript} from 'N/runtime';
 import {getBaseURL} from './Helpers';
 import {EntryPoints} from "N/types";
 
@@ -69,7 +69,7 @@ export class Script extends Serializable implements ScriptInterface{
 
     constructor(args: ScriptInterface) {
         super();
-        this.id = runtime.getCurrentScript().id;
+        this.id = getCurrentScript().id;
         this.logs = new LogArray();
         this.operations = [];
         this.impactedRecords = undefined;
