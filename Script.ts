@@ -1,7 +1,7 @@
 import {jsonProperty, Serializable} from 'ts-serializable';
 import "reflect-metadata";
 import {Operation} from './Operation';
-import {log} from './Logger';
+import {log, LogArray} from './Logger';
 import {writeFile} from './Files';
 import {error} from 'N/log';
 import file from 'N/file';
@@ -56,7 +56,7 @@ export class Script extends Serializable implements ScriptInterface{
     impactedRecords?: {[key: string]: Serializable | null | string};
 
     @jsonProperty([String])
-    logs: string[];
+    logs: LogArray;
 
     @jsonProperty([Serializable])
     operations: Operation[];
@@ -70,7 +70,7 @@ export class Script extends Serializable implements ScriptInterface{
     constructor(args: ScriptInterface) {
         super();
         this.id = runtime.getCurrentScript().id;
-        this.logs = [];
+        this.logs = new LogArray();
         this.operations = [];
         this.impactedRecords = undefined;
         this.logicFunction = args.logicFunction;
@@ -80,7 +80,8 @@ export class Script extends Serializable implements ScriptInterface{
 
     applyOperations(): number {
         if (this.operations.length === 0) {
-            this.logs.push(`0 operations, nothing to do`);
+            this.logs.push(`0 operations, nothing to do. Please consider taking at least 1 empty operation 
+            to make sure the script is working properly`);
             return 0;
         }
         const operationsApplied = 0;

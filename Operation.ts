@@ -14,6 +14,7 @@ export class Operation extends Serializable implements OperationInterface{
     execute: (logs: string[]) => Error[]
 
     fallback?: (logs: string[]) => Error[]
+    isEmpty: boolean = false
     constructor(args: OperationInterface) {
         super();
         this.details = args.details
@@ -22,6 +23,8 @@ export class Operation extends Serializable implements OperationInterface{
     }
 
     static EmptyOperation(details: string): Operation {
-        return new Operation({details: details, execute: () => [], fallback: () => []})
+        const operation = new Operation({details: details, execute: () => [], fallback: () => []})
+        operation.isEmpty = true
+        return operation
     }
 }

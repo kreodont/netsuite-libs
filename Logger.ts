@@ -38,6 +38,13 @@ function repeatString(str: string, N: number) {
     return repeatedString;
 }
 
+export class LogArray extends Array<string> {
+    push(...items: string[]): number {
+        const itemsWithDate = items.map(item => `${new Date().toISOString()} - ${item}`);
+        return super.push(...itemsWithDate);
+    }
+}
+
 export function log(
     details: string,
     title?: string,
