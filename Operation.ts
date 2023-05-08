@@ -20,4 +20,8 @@ export class Operation extends Serializable implements OperationInterface{
         this.execute = args.execute
         this.fallback = args.fallback
     }
+
+    static EmptyOperation(details: string): Operation {
+        return new Operation({details: details, execute: () => [], fallback: () => []})
+    }
 }

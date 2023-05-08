@@ -120,7 +120,7 @@ export class Script extends Serializable implements ScriptInterface{
     run(context: ScriptContext, date: Date): void {
         const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`;
         try {
-            log(`Starting script ${this.id}. Full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
+            log(`Starting "${this.id}" full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
             this.logs.push(`Loading impacted records`);
             this.impactedRecords = this.loadRecordsFunction(context, this.logs);
             for (const recName in this.impactedRecords) {
