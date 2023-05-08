@@ -96,14 +96,14 @@ export class Script extends Serializable implements ScriptInterface{
                 let needException = false;
                 let exceptionText = ``;
                 for (const e of errors) {
-                    log(e.text, `ERROR`, 0, error);
+                    log(e.details, `ERROR`, 0, error);
                     this.logs.push(JSON.stringify(e));
                     if (e.stop) {
                         needExit = true;
                     }
                     if (e.throwException) {
                         needException = true;
-                        exceptionText += `\n${e.text}`;
+                        exceptionText += `\n${e.details}`;
                     }
                     if (e.notify) {
                         this.notifyOwner = true

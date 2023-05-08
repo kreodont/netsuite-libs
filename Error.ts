@@ -1,6 +1,6 @@
 export interface Error {
-    text: string
-    stop: boolean
-    notify: boolean
-    throwException: boolean
+    details: string
+    stop?: boolean
+    notify?: boolean
+    throwException?: boolean
 }
