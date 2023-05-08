@@ -5,7 +5,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "postinstall": "shx cp -r ./node_modules/netsuite-libs/config/. ./ && shx mkdir -p ./netsuite-libs && shx cp ./node_modules/netsuite-libs/*.ts ./netsuite-libs && shx cp ./node_modules/netsuite-libs/dayjs.js ./netsuite-libs/ && shx cp ./node_modules/netsuite-libs/jackson-js.js ./netsuite-libs/jackson-js.js && shx cp ./node_modules/netsuite-libs/sweetalert2.js ./netsuite-libs/sweetalert2.js && shx mv ./gtignr ./.gitignore",
+    "postinstall": "shx cp -r ./node_modules/netsuite-libs/config/. ./ && shx mkdir -p ./netsuite-libs && shx cp ./node_modules/netsuite-libs/*.ts ./netsuite-libs && shx cp ./node_modules/netsuite-libs/dayjs.js ./netsuite-libs/ && shx cp ./node_modules/netsuite-libs/jackson-js.js ./netsuite-libs/jackson-js.js && shx cp ./node_modules/netsuite-libs/sweetalert2.js ./netsuite-libs/sweetalert2.js && shx cp ./node_modules/netsuite-libs/ts-serializable.js ./netsuite-libs/ts-serializable.js && shx mv ./gtignr ./.gitignore",
     "test": "jest",
     "lint": "eslint --fix .eslintrc.js --ext .ts ./",
     "build": "ts-node -P tsconfig-tsnode.json -e \"import { buildNoRollup } from './deploy'; buildNoRollup();\"",
@@ -15,10 +15,11 @@
   "dependencies": {
     "jackson-js": "^1.1.0",
     "sweetalert2": "11.4.8",
-    "dayjs": "^1.11.7"
+    "dayjs": "^1.11.7",
+    "ts-serializable": "^3.0.28"
   },
   "devDependencies": {
-    "netsuite-libs": "git+ssh://git@github.com:kreodont/netsuite-libs.git",
+    "netsuite-libs": "github:kreodont/netsuite-libs#new_approach",
     "core-js": "^3.6.0",
     "@babel/core": "^7.21.3",
     "@babel/plugin-proposal-decorators": "^7.21.0",

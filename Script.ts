@@ -129,7 +129,7 @@ export class Script extends Serializable implements ScriptInterface{
                 if (typeof record !== `string`) {
                     record = JSON.stringify(record);
                 }
-                this.logs.push(`${recName}: ${record}`);
+                this.logs.push(`${recName}:\n${record}`);
             }
             this.logs.push(`Impacted records loaded`);
             this.logs.push(`Calculating operations`);
