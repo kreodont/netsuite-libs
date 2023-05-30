@@ -29,5 +29,6 @@ module.exports = {
         'for-direction': `off`,
         'no-constant-condition': `off`,
         'import/no-absolute-path': `error`,
+        '@typescript-eslint/ban-ts-comment': 'warn'
     },
 };
