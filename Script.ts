@@ -9,7 +9,8 @@ import file from 'N/file';
 import {getCurrentScript} from 'N/runtime';
 import {getBaseURL, getSqlResultAsMap} from './Helpers';
 import {EntryPoints} from "N/types";
-import {email} from 'N';
+import {email, record} from 'N';
+
 
 export type ScriptContext =
     | EntryPoints.Scheduled.executeContext
@@ -34,8 +35,9 @@ export type ScriptContext =
     | null;
 
 interface ScriptInterface {
-    logicFunction: (impactedRecords: {[key: string]: Serializable | null | string}, logs?: string[]) => Operation[]
-    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: Serializable | null | string}
+    logicFunction: (impactedRecords: {[key: string]: ImpactedRecord}, logs?: string[]) => Operation[]
+    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: ImpactedRecord}
+    checksBeforeRunFunction?: (context: ScriptContext, logs?: string[]) => string
     triggerName?: string
 }
 function formatDateWithoutSeparator(date: Date) {
@@ -49,17 +51,23 @@ function formatDateWithoutSeparator(date: Date) {
 
     return year + month + day + `_` + hours + minutes + seconds + milliseconds;
 }
+function getTriggerName(): string {
+    return `Temp Trigger Name`;
+}
 
 interface RunInterface {
     context: ScriptContext
     timeOfRunning?: Date
 }
+
+export type ImpactedRecord = Serializable | null | string| record.Record
+
 export class Script extends Serializable implements ScriptInterface{
     @jsonProperty(String)
     id: string;
 
     @jsonProperty([Serializable])
-    impactedRecords?: {[key: string]: Serializable | null | string};
+    impactedRecords: {[key: string]: ImpactedRecord};
 
     @jsonProperty([String])
     logs: LogArray;
@@ -67,9 +75,11 @@ export class Script extends Serializable implements ScriptInterface{
     @jsonProperty([Serializable])
     operations: Operation[];
 
-    logicFunction: (impactedRecords: {[key: string]: Serializable | null | string}, logs?: string[]) => Operation[];
+    logicFunction: (impactedRecords: {[key: string]: ImpactedRecord}, logs?: string[]) => Operation[];
 
-    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: Serializable | null | string};
+    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: ImpactedRecord};
+
+    checksBeforeRunFunction?: (context: ScriptContext, logs?: string[]) => string;
 
     triggerName: string;
     notifyOwner = false;
@@ -79,31 +89,37 @@ export class Script extends Serializable implements ScriptInterface{
         this.id = getCurrentScript().id;
         this.logs = new LogArray();
         this.operations = [];
-        this.impactedRecords = undefined;
+        this.impactedRecords = {};
         this.logicFunction = args.logicFunction;
         this.loadRecordsFunction = args.loadRecordsFunction;
-        this.triggerName = args.triggerName ? args.triggerName : ``;
+        this.checksBeforeRunFunction = args.checksBeforeRunFunction;
+        this.triggerName = args.triggerName ? args.triggerName : getTriggerName();
     }
 
     applyOperations(): number {
         if (this.operations.length === 0) {
-            this.logs.push(`0 operations, nothing to do. Please consider taking at least 1 empty operation 
-            to make sure the script is working properly`);
+            this.logs.push(`0 operations, nothing to do. Please consider adding at least 1 empty operation to make sure the script is working properly`);
             return 0;
         }
-        const operationsApplied = 0;
+        let operationsApplied = 0;
         for (const op of this.operations) {
             this.logs.push(`Operation #${this.operations.indexOf(op) + 1}`);
             this.logs.push(JSON.stringify(op));
             const errors = op.execute(this.logs);
+            operationsApplied += 1;
             if (errors.length > 0) {
                 let needExit = false;
                 let needException = false;
                 let exceptionText = ``;
                 this.logs.push(`____There are ${errors.length} errors occurred:`);
                 for (const e of errors) {
-                    log(e.details, `ERROR`, 0, error);
-                    this.logs.push(`____ERROR: ` + JSON.stringify(e));
+                    if (e.severity === `DEBUG`) {
+                        this.logs.push(`____` + e.details);
+                    }
+                    else {
+                        log(e.details, `ERROR`, 0, error);
+                        this.logs.push(`____ERROR: ` + JSON.stringify(e));
+                    }
                     if (e.stop) {
                         needExit = true;
                     }
@@ -135,6 +151,7 @@ export class Script extends Serializable implements ScriptInterface{
             else {
                 this.logs.push(`____No errors`);
             }
+            this.logs.push(`Operation #${this.operations.indexOf(op) + 1} done\n`);
         }
         return operationsApplied;
     }
@@ -144,21 +161,44 @@ export class Script extends Serializable implements ScriptInterface{
         const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`;
         try {
             log(`Starting "${this.id}" full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
-
-            this.logs.push(`Loading impacted records`);
-            this.impactedRecords = this.loadRecordsFunction(args.context, this.logs);
-            for (const recName in this.impactedRecords) {
-                let record = this.impactedRecords[recName];
-                if (typeof record !== `string`) {
-                    record = JSON.stringify(record);
+            if (this.checksBeforeRunFunction) {
+                this.logs.push(`Running checks before main logic`);
+                const checkError = this.checksBeforeRunFunction(args.context, this.logs);
+                if (checkError.length > 0) {
+                    this.logs.push(`____` + checkError);
+                    this.operations = [
+                        new Operation({
+                            details: `Stopping script due to checks before run`,
+                            execute: () => [{details: checkError, severity: `DEBUG`}],
+                            isEmpty: true
+                        })
+                    ];
                 }
-                this.logs.push(`${recName}:\n${record}`);
+                this.logs.push(`Running checks before main logic done\n\n`);
             }
-            this.logs.push(`All impacted records are loaded\n\n`);
+            if (this.operations.length === 0) { // nothing was added during checksBeforeRunFunction run
+                this.logs.push(`Loading impacted records`);
+                this.impactedRecords = this.loadRecordsFunction(args.context, this.logs);
+                if (!this.impactedRecords[`contextText`] && args.context) {
+                    this.impactedRecords[`contextText`] = JSON.stringify(args.context);
+                }
+                for (const recName in this.impactedRecords) {
+                    if (recName === `error` && !this.impactedRecords[`error`]) {
+                        continue;
+                    }
+                    let record = this.impactedRecords[recName];
+                    if (typeof record !== `string`) {
+                        record = JSON.stringify(record);
+                    }
+                    this.logs.push(`${recName}:\n${record}`);
+                }
+                this.logs.push(`All impacted records are loaded\n\n`);
 
-            this.logs.push(`Applying business logic function`);
-            this.operations = this.logicFunction(this.impactedRecords, this.logs);
-            this.logs.push(`Logic applied. Need to perform ${this.operations.length} operations\n\n`);
+                this.logs.push(`Applying business logic function`);
+                this.operations = this.logicFunction(this.impactedRecords, this.logs);
+                this.logs.push(`Logic applied. Need to perform ${this.operations.length} operations\n\n`);
+            }
+
 
             const numberOperationsApplied = this.applyOperations();
             this.logs.push(`Writing log file`);

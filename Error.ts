@@ -3,4 +3,6 @@ export interface Error {
     stop?: boolean
     notify?: boolean
     throwException?: boolean
+
+    severity?: `ERROR` | `DEBUG`
 }
