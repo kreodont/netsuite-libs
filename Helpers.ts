@@ -57,20 +57,14 @@ export function fetchOneValue(sqlString: string): string | null {
 
 export function getSqlResultAsMap(
     sqlString: string,
-    logs?: string[],
-): { [p: string]: string | boolean | number | null }[] | undefined {
-    try {
-        const sqlResults: query.Result[] = query.runSuiteQL({
-            query: sqlString,
-        }).results;
-        if (sqlResults) {
-            return sqlResults.map((result) => {
-                return result.asMap();
-            });
-        }
-    } catch (e) {
-        logs?.push(e as string);
-        return undefined;
+): { [p: string]: string | boolean | number | null }[] {
+    const sqlResults: query.Result[] = query.runSuiteQL({
+        query: sqlString,
+    }).results;
+    if (sqlResults) {
+        return sqlResults.map((result) => {
+            return result.asMap();
+        });
     }
     return [];
 }

@@ -29,4 +29,8 @@ export class Operation extends Serializable implements OperationInterface{
         operation.isEmpty = true;
         return operation;
     }
+
+    static OperationRaiseError(details: string): Operation {
+        return new Operation({details: details, execute: () => [{details: details, stop: true, notify: true}]});
+    }
 }
