@@ -39,7 +39,6 @@ interface ScriptInterface {
     logicFunction: (impactedRecords: {[key: string]: ImpactedRecord}, logs?: string[]) => Operation[]
     loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: ImpactedRecord}
     checksBeforeRunFunction?: (context: ScriptContext, logs?: string[]) => string
-    triggerName?: string
 }
 function formatDateWithoutSeparator(date: Date) {
     const year = String(date.getFullYear());
@@ -53,15 +52,20 @@ function formatDateWithoutSeparator(date: Date) {
     return year + month + day + `_` + hours + minutes + seconds + milliseconds;
 }
 function getTriggerName(): string {
-    const temp_error = ns_error.create({
+
+    const tempError = ns_error.create({
         notifyOff: true,
         name: `Temp Error`,
         message: `Temp Error`,
     });
+
     const regex = /at Object\.(\w+)/g;
-    const match = regex.exec(JSON.stringify(temp_error));
+    const match = regex.exec(JSON.stringify(tempError));
     if (!match) {
         return `noTriggerName`;
+    }
+    if (match[1] === `createError`) { // client script
+        return `client`;
     }
     return match[1];
 }
@@ -72,7 +76,7 @@ interface RunInterface {
 }
 
 
-export type ImpactedRecord = Serializable | null | string| record.Record
+export type ImpactedRecord = Serializable | null | string| record.Record | record.ClientCurrentRecord
 
 export class Script extends Serializable implements ScriptInterface{
     @jsonProperty(String)
@@ -105,7 +109,7 @@ export class Script extends Serializable implements ScriptInterface{
         this.logicFunction = args.logicFunction;
         this.loadRecordsFunction = args.loadRecordsFunction;
         this.checksBeforeRunFunction = args.checksBeforeRunFunction;
-        this.triggerName = args.triggerName ? args.triggerName : getTriggerName();
+        this.triggerName = getTriggerName();
     }
 
     applyOperations(): Operation[] {
@@ -173,7 +177,10 @@ export class Script extends Serializable implements ScriptInterface{
         const date = args.timeOfRunning ? args.timeOfRunning : new Date();
         const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`;
         try {
-            log(`Starting "${this.id}" full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
+            if (this.triggerName !== 'client') {
+                log(`Starting "${this.id}" full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
+            }
+
             if (this.checksBeforeRunFunction) {
                 this.logs.push(`Running checks before main logic`);
                 const checkError = this.checksBeforeRunFunction(args.context, this.logs);
@@ -231,14 +238,40 @@ export class Script extends Serializable implements ScriptInterface{
             else {
                 operationsApplied = this.operations;
             }
-            this.logs.push(`Writing log file`);
-            const fileIds = writeFile(fileName, this.logs.join(`\n`), `SuiteScripts : Logs`, this.logs);
-            if (fileIds.length === 0) {
-                log(`Failed to save the log file: ${fileName}`, fileName, 0, error);
+            if (this.triggerName !== `client`) { // Writing files is not allowed for client scripts
+                this.logs.push(`Writing log file`);
+                const fileIds = writeFile(fileName, this.logs.join(`\n`), `SuiteScripts : Logs`, this.logs);
+                if (fileIds.length === 0) {
+                    log(`Failed to save the log file: ${fileName}`, fileName, 0, error);
+                }
+                if (this.notifyOwner && !testMode) {
+                    log(`Notifying script owner by e-mail`);
+                    const notificationLogs: string[] = [];
+                    notifyOwner(`Script ${this.id} logs`, this.id, file.load({id: fileIds[0]}), notificationLogs);
+                    for (const nlg of notificationLogs) {
+                        log(nlg);
+                    }
+                }
+                log(`Completed. ${operationsApplied.length} operations applied. Logs: ${getBaseURL()}${file.load({id: fileIds[0]}).url}`, fileName);
             }
-            log(`Completed. ${operationsApplied.length} operations applied. Logs: ${getBaseURL()}${file.load({id: fileIds[0]}).url}`, fileName);
+            else {
+                for (const logLine of this.logs) {
+                    log(logLine);
+                }
+            }
 
-            if (this.notifyOwner && !testMode) {
+        }
+        catch (e) {
+            log(JSON.stringify(e));
+            this.logs.push(JSON.stringify(e));
+            if (this.triggerName !== `client`) {
+                log(`Saving log file`);
+                const savingFileLogs: string[] = [];
+                const fileIds = writeFile(fileName, this.logs.join(`\n`), `SuiteScripts : Logs`, savingFileLogs);
+                for (const fileLog of savingFileLogs) {
+                    log(fileLog);
+                }
+
                 log(`Notifying script owner by e-mail`);
                 const notificationLogs: string[] = [];
                 notifyOwner(`Script ${this.id} logs`, this.id, file.load({id: fileIds[0]}), notificationLogs);
@@ -246,15 +279,11 @@ export class Script extends Serializable implements ScriptInterface{
                     log(nlg);
                 }
             }
-        }
-        catch (e) {
-            log(JSON.stringify(e));
-            this.logs.push(JSON.stringify(e));
-            log(`Saving log file`);
-            const fileIds = writeFile(fileName, this.logs.join(`\n`), `SuiteScripts : Logs`, this.logs);
-            log(`Notifying script owner by e-mail`);
-            const notificationLogs: string[] = [];
-            notifyOwner(`Script ${this.id} logs`, this.id, file.load({id: fileIds[0]}), notificationLogs);
+            else {
+                for (const logLine of this.logs) {
+                    log(logLine);
+                }
+            }
             log(`Throwing original exception`);
             throw e;
         }
