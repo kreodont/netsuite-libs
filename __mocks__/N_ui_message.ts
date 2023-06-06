@@ -1,0 +1,4 @@
+const Type = {
+};
+
+export = Type;

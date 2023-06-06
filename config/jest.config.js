@@ -15,5 +15,7 @@ module.exports = {
         '^N/file$': '<rootDir>/__mocks__/N_file.ts',
         '^N/runtime$': '<rootDir>/__mocks__/N_runtime.ts',
         '^N$': '<rootDir>/__mocks__/N.ts',
+        "^N/ui/message$": "<rootDir>/__mocks__/N_ui_message.ts",
+        "^N/ui/serverWidget$": "<rootDir>/__mocks__/N_ui_serverWidget.ts"
     }
 };

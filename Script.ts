@@ -40,6 +40,7 @@ interface ScriptInterface {
     loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: ImpactedRecord}
     checksBeforeRunFunction?: (context: ScriptContext, logs?: string[]) => string
 }
+
 function formatDateWithoutSeparator(date: Date) {
     const year = String(date.getFullYear());
     const month = String(date.getMonth() + 1).padStart(2, `0`);
@@ -51,6 +52,7 @@ function formatDateWithoutSeparator(date: Date) {
 
     return year + month + day + `_` + hours + minutes + seconds + milliseconds;
 }
+
 function getTriggerName(): string {
 
     const tempError = ns_error.create({
