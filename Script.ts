@@ -201,7 +201,7 @@ export class Script extends Serializable implements ScriptInterface{
             if (this.operations.length === 0) { // nothing was added during checksBeforeRunFunction run
                 this.logs.push(`Loading impacted records`);
                 this.impactedRecords = this.loadRecordsFunction(args.context, this.logs);
-                if (!this.impactedRecords[`contextText`] && args.context) {
+                if (!this.impactedRecords[`contextText`] && !this.impactedRecords[`context`] && args.context) {
                     this.impactedRecords[`contextText`] = JSON.stringify(args.context);
                 }
                 for (const recName in this.impactedRecords) {
