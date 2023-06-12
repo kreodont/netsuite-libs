@@ -78,7 +78,7 @@ interface RunInterface {
 }
 
 
-export type ImpactedRecord = Serializable | null | string| record.Record | record.ClientCurrentRecord
+export type ImpactedRecord = Serializable | null | string| record.Record | record.ClientCurrentRecord | ScriptContext
 
 export class Script extends Serializable implements ScriptInterface{
     @jsonProperty(String)
