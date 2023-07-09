@@ -30,7 +30,11 @@ export class Operation extends Serializable implements OperationInterface{
         return operation;
     }
 
-    static OperationRaiseError(details: string): Operation {
+    static OperationRaiseErrorWithoutException(details: string): Operation {
         return new Operation({details: details, execute: () => [{details: details, stop: true, notify: true}]});
+    }
+
+    static OperationRaiseException(details: string): Operation {
+        return new Operation({details: details, execute: () => [{details: details, stop: true, notify: true, throwException: true}]});
     }
 }
