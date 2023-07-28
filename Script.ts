@@ -9,8 +9,9 @@ import file from 'N/file';
 import {getCurrentScript} from 'N/runtime';
 import {getBaseURL, getSqlResultAsMap} from './Helpers';
 import {EntryPoints} from "N/types";
-import {email, record} from 'N';
+import {email, record, runtime} from 'N';
 import { error as ns_error } from 'N';
+
 
 
 export type ScriptContext =
@@ -36,9 +37,10 @@ export type ScriptContext =
     | null;
 
 interface ScriptInterface {
-    logicFunction: (impactedRecords: {[key: string]: ImpactedRecord}, logs?: string[]) => Operation[]
-    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: ImpactedRecord}
-    checksBeforeRunFunction?: (context: ScriptContext, logs?: string[]) => string
+    logicFunction: (impactedRecords: {[key: string]: ImpactedRecord}, logs: string[]) => Operation[]
+    loadRecordsFunction: (context: ScriptContext, logs: string[]) => {[key: string]: ImpactedRecord}
+    checksBeforeRunFunction: (context: ScriptContext, logs: string[]) => string
+    context: ScriptContext
 }
 
 function formatDateWithoutSeparator(date: Date) {
@@ -80,24 +82,45 @@ interface RunInterface {
 
 export type ImpactedRecord = Serializable | null | string| record.Record | record.ClientCurrentRecord | ScriptContext
 
+function checksBeforeRunWrapper(logs: string[], context: ScriptContext, initialFunction: (context: ScriptContext, logs: string[]) => string) {
+    logs.push(`Script run by: ${runtime.getCurrentUser().email} (role: ${runtime.getCurrentUser().role})`);
+    logs.push(`Context: ${runtime.executionContext}`);
+    let recordId = `null`;
+    if (context) {
+        const userEventContext = context as EntryPoints.UserEvent.beforeSubmitContext;
+        if (userEventContext.newRecord) {
+            recordId = String(userEventContext.newRecord.id);
+        }
+        const clientScriptContext = context as EntryPoints.Client.pageInitContext;
+        if (clientScriptContext.currentRecord) {
+            recordId = String(clientScriptContext.currentRecord.id);
+        }
+    }
+    logs.push(`Record ID: ${recordId}`);
+    logs.push(`\n`);
+    return initialFunction;
+
+}
+
 export class Script extends Serializable implements ScriptInterface{
+    context: ScriptContext;
     @jsonProperty(String)
     id: string;
 
-    @jsonProperty([Serializable])
+    @jsonProperty(Object)
     impactedRecords: {[key: string]: ImpactedRecord};
 
     @jsonProperty([String])
     logs: LogArray;
 
-    @jsonProperty([Serializable])
+    @jsonProperty([Object])
     operations: Operation[];
 
-    logicFunction: (impactedRecords: {[key: string]: ImpactedRecord}, logs?: string[]) => Operation[];
+    logicFunction: (impactedRecords: {[key: string]: ImpactedRecord}, logs: string[]) => Operation[];
 
-    loadRecordsFunction: (context: ScriptContext, logs?: string[]) => {[key: string]: ImpactedRecord};
+    loadRecordsFunction: (context: ScriptContext, logs: string[]) => {[key: string]: ImpactedRecord};
 
-    checksBeforeRunFunction?: (context: ScriptContext, logs?: string[]) => string;
+    checksBeforeRunFunction: (context: ScriptContext, logs: string[]) => string;
 
     triggerName: string;
     notifyOwner = false;
@@ -110,7 +133,8 @@ export class Script extends Serializable implements ScriptInterface{
         this.impactedRecords = {};
         this.logicFunction = args.logicFunction;
         this.loadRecordsFunction = args.loadRecordsFunction;
-        this.checksBeforeRunFunction = args.checksBeforeRunFunction;
+        this.context = args.context;
+        this.checksBeforeRunFunction = checksBeforeRunWrapper(this.logs, args.context, args.checksBeforeRunFunction);
         this.triggerName = getTriggerName();
     }
 
@@ -179,7 +203,7 @@ export class Script extends Serializable implements ScriptInterface{
         const date = args.timeOfRunning ? args.timeOfRunning : new Date();
         const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`;
         try {
-            if (this.triggerName !== 'client') {
+            if (this.triggerName !== `client`) {
                 log(`Starting "${this.id}" full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
             }
 
@@ -192,7 +216,7 @@ export class Script extends Serializable implements ScriptInterface{
                         new Operation({
                             details: `Stopping script due to checks before run`,
                             execute: () => [{details: checkError, severity: `DEBUG`}],
-                            isEmpty: true
+                            operationType: `Empty`
                         })
                     ];
                 }
@@ -214,7 +238,7 @@ export class Script extends Serializable implements ScriptInterface{
                                 new Operation({
                                     details: `Stopping script due to checks before run`,
                                     execute: () => [{details: String(this.impactedRecords[`error`]), severity: `ERROR`, notify: true}],
-                                    isEmpty: true
+                                    operationType: `Empty`
                                 })
                             );
                         }
