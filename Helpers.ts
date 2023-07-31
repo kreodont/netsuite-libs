@@ -69,6 +69,20 @@ export function getSqlResultAsMap(
     return [];
 }
 
+export function uniqueArray<T>(inputArray: Array<T>): Array<T> {
+    return inputArray.filter((element, position) => inputArray.indexOf(element) === position)
+}
+export function getNamesByIDs(ids: number[], databaseTable: string): {[id: number]: string} {
+    const output:{[id: number]: string} = {}
+    const uniqueIds = uniqueArray(ids)
+    const sql = `SELECT id, BUITIN.DF(id) as name from ${databaseTable} where id in (${uniqueIds})`
+    const results = getSqlResultAsMap(sql)
+    for (const r of results) {
+        output[Number(r['ids'])] = String(r['name'])
+    }
+    return output
+}
+
 // export function loadTransactionLineGroup(
 //     transactionsIds: number[],
 //     logs?: string[],
