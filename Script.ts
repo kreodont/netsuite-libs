@@ -84,7 +84,8 @@ export type ImpactedRecord = Serializable | null | string| record.Record | recor
 
 function checksBeforeRunWrapper(logs: string[], context: ScriptContext, initialFunction: (context: ScriptContext, logs: string[]) => string) {
     logs.push(`Script run by: ${runtime.getCurrentUser().email} (role: ${runtime.getCurrentUser().role})`);
-    logs.push(`Context: ${runtime.executionContext}`);
+    logs.push(`Execution context: ${runtime.executionContext}`);
+    logs.push(`Script context: ${context ? (context as EntryPoints.UserEvent.beforeSubmitContext).type : `null`}`);
     let recordId = `null`;
     if (context) {
         const userEventContext = context as EntryPoints.UserEvent.beforeSubmitContext;
