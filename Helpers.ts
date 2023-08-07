@@ -83,6 +83,38 @@ export function getNamesByIDs(ids: number[], databaseTable: string): {[id: numbe
     return output
 }
 
+export function getDifferentParameterByIDS(
+    ids: number[],
+    databaseTable: string,
+    parameterNameToHowToFetchDict: {[parameterName: string]: string},
+    logs?: string[]
+): {[id: number]: {[parameterName: string]: string}} {
+    /**
+     * When you have records ids, and you want to fetch some information about these records. For example, if you have items ids, and you need their names and descriptions:
+     * getDifferentParameterByIDS(
+     *         [101, 2009, 44, 444],
+     *         `item`,
+     *         {'name': `BUILTIN.DF(id)`, 'description': 'description'},
+     *         logs,
+     *         )
+     */
+    const uniqueIds = uniqueArray(ids);
+    const output:{[id: number]: {[parameterName: string]: string}} = {};
+    const s = Object.entries(parameterNameToHowToFetchDict).map(([key, value]) => `${value} as ${key}`).join(`, `);
+    const sql = `SELECT id, ${s} from ${databaseTable} where id in (${uniqueIds})`;
+    logs?.push(sql);
+    const results = getSqlResultAsMap(sql);
+    for (const r of results) {
+        output[Number(r[`id`])] = {};
+        for (const parameterName in parameterNameToHowToFetchDict) {
+            output[Number(r[`id`])][parameterName] = String(r[parameterName]);
+        }
+    }
+    return output;
+}
+
+
+
 // export function loadTransactionLineGroup(
 //     transactionsIds: number[],
 //     logs?: string[],
