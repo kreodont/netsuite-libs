@@ -83,7 +83,7 @@ export function getNamesByIDs(ids: number[], databaseTable: string): {[id: numbe
     return output
 }
 
-export function formatAsCurrency(n: number): string {
+export function formatAsCurrency(n: number, currencySign: string = `$`): string {
     const rounded = Math.round(n * 100) / 100;
 
     // Split the integer and decimal parts
@@ -95,7 +95,8 @@ export function formatAsCurrency(n: number): string {
     // Ensure two decimal places
     const decimalPart = parts[1] ? parts[1].padEnd(2, `0`) : `00`;
 
-    return integerPart + `.` + decimalPart;
+    const resultString = currencySign + integerPart + `.` + decimalPart;
+    return n < 0? `(${resultString})`: resultString
 }
 
 export function getDifferentParameterByIDS(
