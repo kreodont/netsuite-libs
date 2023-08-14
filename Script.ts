@@ -147,7 +147,7 @@ export class Script extends Serializable implements ScriptInterface{
         }
         for (const op of this.operations) {
             this.logs.push(`Operation #${this.operations.indexOf(op) + 1}`);
-            this.logs.push(JSON.stringify(op));
+            this.logs.push(JSON.stringify(op, null, 4));
             const errors = op.execute(this.logs);
             if (errors.length > 0) {
                 let needExit = false;
@@ -246,7 +246,7 @@ export class Script extends Serializable implements ScriptInterface{
                     }
                     let record = this.impactedRecords[recName];
                     if (typeof record !== `string`) {
-                        record = JSON.stringify(record);
+                        record = JSON.stringify(record, null, 4);
                     }
                     this.logs.push(`${recName}:\n${record}`);
                 }
@@ -323,14 +323,14 @@ export function notifyOwner(errorText: string, scriptId: string, attachment: Fil
     logs?.push(sql);
     const results = getSqlResultAsMap(sql);
     if (results.length < 1) {
-        logs?.push(`Failed to run sql: ${sql}, results: ${JSON.stringify(results)}`);
+        logs?.push(`Failed to run sql: ${sql}, results: ${JSON.stringify(results, null, 4)}`);
         return;
     }
 
     const ownerId = Number(results[0][`owner_id`]);
     const ownerEmail = String(results[0][`owner_email`]);
     if (!ownerId || ownerEmail.length === 0) {
-        logs?.push(`Could not find ownerId or ownerEmail in ${JSON.stringify(results[0])}`);
+        logs?.push(`Could not find ownerId or ownerEmail in ${JSON.stringify(results[0], null, 4)}`);
         return;
     }
     try {
