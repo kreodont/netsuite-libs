@@ -169,8 +169,7 @@ define(['exports'], (function (exports) { 'use strict';
          * @memberof Serializable
          */
         onWrongType(prop, message, jsonValue) {
-            // eslint-disable-next-line no-console
-            console.error(`${this.constructor.name}.fromJSON: json.${prop} ${message}:`, jsonValue);
+            throw `${this.constructor.name}.fromJSON: json.${prop} ${message}: ${jsonValue}}`;
         }
         /**
          * //todo: write jsdoc
