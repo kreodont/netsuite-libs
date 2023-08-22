@@ -70,20 +70,10 @@ export function getSqlResultAsMap(
 }
 
 export function uniqueArray<T>(inputArray: Array<T>): Array<T> {
-    return inputArray.filter((element, position) => inputArray.indexOf(element) === position)
-}
-export function getNamesByIDs(ids: number[], databaseTable: string): {[id: number]: string} {
-    const output:{[id: number]: string} = {}
-    const uniqueIds = uniqueArray(ids)
-    const sql = `SELECT id, BUITIN.DF(id) as name from ${databaseTable} where id in (${uniqueIds})`
-    const results = getSqlResultAsMap(sql)
-    for (const r of results) {
-        output[Number(r['ids'])] = String(r['name'])
-    }
-    return output
+    return inputArray.filter((element, position) => inputArray.indexOf(element) === position);
 }
 
-export function formatAsCurrency(n: number, currencySign: string = `$`): string {
+export function formatAsCurrency(n: number, currencySign = `$`): string {
     const rounded = Math.round(Math.abs(n) * 100) / 100;
 
     // Split the integer and decimal parts
@@ -96,14 +86,15 @@ export function formatAsCurrency(n: number, currencySign: string = `$`): string 
     const decimalPart = parts[1] ? parts[1].padEnd(2, `0`) : `00`;
 
     const resultString = currencySign + integerPart + `.` + decimalPart;
-    return n < 0? `(${resultString})`: resultString
+    return n < 0? `(${resultString})`: resultString;
 }
 
 export function getDifferentParameterByIDS(
     ids: number[],
     databaseTable: string,
     parameterNameToHowToFetchDict: {[parameterName: string]: string},
-    logs?: string[]
+    logs?: string[],
+    idFieldName = `id`
 ): {[id: number]: {[parameterName: string]: string}} {
     /**
      * When you have records ids, and you want to fetch some information about these records. For example, if you have items ids, and you need their names and descriptions:
@@ -117,19 +108,17 @@ export function getDifferentParameterByIDS(
     const uniqueIds = uniqueArray(ids);
     const output:{[id: number]: {[parameterName: string]: string}} = {};
     const s = Object.entries(parameterNameToHowToFetchDict).map(([key, value]) => `${value} as ${key}`).join(`, `);
-    const sql = `SELECT id, ${s} from ${databaseTable} where id in (${uniqueIds})`;
+    const sql = `SELECT ${idFieldName}, ${s} from ${databaseTable} where ${idFieldName} in (${uniqueIds})`;
     logs?.push(sql);
     const results = getSqlResultAsMap(sql);
     for (const r of results) {
-        output[Number(r[`id`])] = {};
+        output[Number(r[idFieldName])] = {};
         for (const parameterName in parameterNameToHowToFetchDict) {
-            output[Number(r[`id`])][parameterName] = String(r[parameterName]);
+            output[Number(r[idFieldName])][parameterName] = String(r[parameterName]);
         }
     }
     return output;
 }
-
-
 
 // export function loadTransactionLineGroup(
 //     transactionsIds: number[],
