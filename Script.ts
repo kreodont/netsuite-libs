@@ -7,7 +7,7 @@ import {error} from 'N/log';
 import {File} from 'N/file';
 import file from 'N/file';
 import {getCurrentScript} from 'N/runtime';
-import {getBaseURL, getSqlResultAsMap} from './Helpers';
+import {generateRandomString, getBaseURL, getSqlResultAsMap} from './Helpers';
 import {EntryPoints} from "N/types";
 import {email, record, runtime} from 'N';
 import { error as ns_error } from 'N';
@@ -202,7 +202,7 @@ export class Script extends Serializable implements ScriptInterface{
     run(args: RunInterface, testMode = false): Operation[] {
         let operationsApplied: Operation[] = [];
         const date = args.timeOfRunning ? args.timeOfRunning : new Date();
-        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}`;
+        const fileName = `${formatDateWithoutSeparator(date)}_${this.id}_${this.triggerName}_${generateRandomString(4)}`;
         try {
             if (this.triggerName !== `client`) {
                 log(`Starting "${this.id}" full logs in SuiteScripts/Logs/${fileName}.txt`, fileName);
