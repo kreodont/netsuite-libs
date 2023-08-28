@@ -99,7 +99,7 @@ export function generateRandomString(length: number) {
 }
 
 export function getDifferentParameterByIDS(
-    ids: number[],
+    ids: (number | null)[],
     databaseTable: string,
     parameterNameToHowToFetchDict: {[parameterName: string]: string},
     logs?: string[],
@@ -114,7 +114,7 @@ export function getDifferentParameterByIDS(
      *         logs,
      *         )
      */
-    const uniqueIds = uniqueArray(ids);
+    const uniqueIds = uniqueArray(ids).filter(id => id !== null);
     const output:{[id: number]: {[parameterName: string]: string}} = {};
     const s = Object.entries(parameterNameToHowToFetchDict).map(([key, value]) => `${value} as ${key}`).join(`, `);
     const sql = `SELECT ${idFieldName}, ${s} from ${databaseTable} where ${idFieldName} in (${uniqueIds})`;
