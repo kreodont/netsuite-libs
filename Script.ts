@@ -246,9 +246,8 @@ export class Script extends Serializable implements ScriptInterface{
                     if (typeof record !== `string`) {
                         record = JSON.stringify(record, null, 4);
                     }
-                    this.logs.push(`${recName}:\n${record}`);
                 }
-                this.logs.push(`All impacted records are loaded\n\n`);
+                this.logs.push(`All impacted records (${Object.values(this.impactedRecords).length}) are loaded\n\n`);
 
                 if (this.operations.length === 0) {
                     this.logs.push(`Applying business logic function`);
