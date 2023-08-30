@@ -2,6 +2,7 @@ import {jsonProperty, Serializable} from 'ts-serializable';
 import "reflect-metadata";
 import {Error} from './Error';
 import {FieldValue} from "N/record";
+import {record} from "N";
 
 
 type OperationType = `Create` | `Delete` | `Change Value` | `Empty` | `Error`
@@ -31,46 +32,46 @@ export class Operation extends Serializable implements OperationInterface{
     isEmpty = false;
 
     @jsonProperty(Date, Number, String, Boolean, null, [String], [Number])
-    valueToSet?: FieldValue
+    valueToSet?: FieldValue;
 
     @jsonProperty(Date, Number, String, Boolean, null, [String], [Number])
-    previousValue?: FieldValue
+    previousValue?: FieldValue;
 
     @jsonProperty(String)
-    field?: string
+    field?: string;
 
     @jsonProperty(String)
-    recordType?: string
+    recordType?: string;
 
     @jsonProperty(String, null)
-    recordId?: string | null // null is for new records, that are not submitted yet
+    recordId?: string | null; // null is for new records, that are not submitted yet
 
     @jsonProperty(String)
-    subType?: string // For line updates
+    subType?: string; // For line updates
 
     @jsonProperty(String)
-    lineUniqueKey?: string // More reliable than line number. uniquekey in SQL, lineuniquekey in getSublistValue
+    lineUniqueKey?: string; // More reliable than line number. uniquekey in SQL, lineuniquekey in getSublistValue
 
     @jsonProperty(Object)
-    parameters?: {[key: string]: string}
+    parameters?: {[key: string]: string};
 
     @jsonProperty(String)
-    operationType: OperationType
+    operationType: OperationType;
 
     constructor(args: OperationInterface) {
         super();
         this.details = args.details;
         this.execute = args.execute;
         this.fallback = args.fallback;
-        this.valueToSet = args.valueToSet
-        this.previousValue = args.previousValue
-        this.recordType = args.recordType
-        this.recordId = args.recordId
-        this.subType = args.subType
-        this.field = args.field
-        this.lineUniqueKey = args.lineUniqueKey
-        this.parameters = args.parameters
-        this.operationType = args.operationType
+        this.valueToSet = args.valueToSet;
+        this.previousValue = args.previousValue;
+        this.recordType = args.recordType;
+        this.recordId = args.recordId;
+        this.subType = args.subType;
+        this.field = args.field;
+        this.lineUniqueKey = args.lineUniqueKey;
+        this.parameters = args.parameters;
+        this.operationType = args.operationType;
     }
 
     static EmptyOperation(details: string): Operation {
@@ -87,10 +88,59 @@ export class Operation extends Serializable implements OperationInterface{
         return new Operation({details: details, operationType: `Error`, execute: () => [{details: details, stop: true, notify: true, throwException: true}]});
     }
 
+    static OperationUpdateLine(
+        details: string,
+        loadedRecord: record.Record | null,
+        recordType: string,
+        recordId: string,
+        sublistName: string,
+        uniqueLineId: string,
+        field: string,
+        value: FieldValue,
+        logs: string[],
+    ): Operation {
+
+        function execute(): Error[] {
+            logs.push(`Updating record "${recordType}" with id "${recordId}" sublist "${sublistName}" line with lineuniquekey "${uniqueLineId}". Setting value "${value}"`);
+            try {
+                const r = loadedRecord ? loadedRecord : record.load({type: recordType, id: recordId});
+                let lineFound = false;
+                for (let i = 0; i < r.getLineCount({sublistId: sublistName}); i ++) {
+                    const lineId = String(r.getSublistValue({sublistId: sublistName, line: i, fieldId: `lineuniquekey`}));
+                    if (lineId === uniqueLineId) {
+                        lineFound = true;
+                        logs.push(`Line found at position ${i + 1} (starting from 1). Setting the value`);
+                        r.setSublistValue({sublistId: sublistName, line: i, fieldId: field, value: value});
+                        logs.push(`Value "${value}" set`);
+                    }
+                }
+                if (!lineFound) {
+                    return [Operation.OperationRaiseErrorWithoutException(`Could not find line with lineuniquekey "${uniqueLineId}" in record "${recordType}" with id "${recordId}" sublist "${sublistName}". Most probably, it was already deleted by someone else`)];
+                }
+                return [];
+            }
+            catch (e) {
+                return [Operation.OperationRaiseException(`Error during line update: ${e}`)];
+            }
+        }
+
+        return new Operation({
+            execute: execute,
+            operationType: `Change Value`,
+            recordType: recordType,
+            recordId: recordId,
+            subType: sublistName,
+            valueToSet: value,
+            details: details,
+            field: field,
+            lineUniqueKey: uniqueLineId,
+        });
+    }
+
     static example(): Operation {
         return new Operation({
             details: `Example Operation`,
-            operationType: "Empty",
+            operationType: `Empty`,
             recordType: undefined,
             recordId: undefined,
             subType: undefined,
@@ -101,11 +151,11 @@ export class Operation extends Serializable implements OperationInterface{
             lineUniqueKey: undefined,
             previousValue: undefined,
             valueToSet: undefined
-        })
+        });
     }
 
     static fromStr(s: string): Operation {
-        return Operation.example().fromJSON(JSON.parse(s) as Record<string, string>)
+        return Operation.example().fromJSON(JSON.parse(s) as Record<string, string>);
     }
 
 }
