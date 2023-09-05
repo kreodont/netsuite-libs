@@ -137,6 +137,37 @@ export class Operation extends Serializable implements OperationInterface{
         });
     }
 
+    static OperationUpdateBody(
+        details: string,
+        loadedRecord: record.Record | null,
+        recordType: string,
+        recordId: string,
+        field: string,
+        value: FieldValue,
+        logs: string[],
+    ): Operation {
+        function execute(): Error[] {
+            logs.push(`Updating record "${recordType}" with id "${recordId}" field "${field}". Setting value "${value}"`);
+            try {
+                const r = loadedRecord ? loadedRecord : record.load({type: recordType, id: recordId});
+                r.setValue({fieldId: field, value: value});
+                return [];
+            }
+            catch (e) {
+                return [Operation.OperationRaiseException(`Error during line update: ${e}`)];
+            }
+        }
+
+        return new Operation({
+            execute: execute,
+            operationType: `Change Value`,
+            recordType: recordType,
+            recordId: recordId,
+            valueToSet: value,
+            details: details,
+            field: field,
+        });
+    }
     static example(): Operation {
         return new Operation({
             details: `Example Operation`,
