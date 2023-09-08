@@ -54,6 +54,18 @@ export function fetchOneValue(sqlString: string): string | null {
 
     return String(results[0].values[0]);
 }
+export function datesAreTheSame(d1: Date | null, d2: Date | null): boolean {
+    if (d1 === null && d2 === null) {
+        return true;
+    }
+    if (!d1 && d2) {
+        return false;
+    }
+    if (!d2 && d1) {
+        return false;
+    }
+    return d1?.getFullYear() === d2?.getFullYear() && d1?.getMonth() === d2?.getMonth() && d1?.getDate() === d2?.getDate();
+}
 
 export function getSqlResultAsMap(
     sqlString: string,
@@ -91,7 +103,7 @@ export function formatAsCurrency(n: number, currencySign = `$`): string {
 
 export function generateRandomString(length: number) {
     const characters = `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789`;
-    let result = '';
+    let result = ``;
     for (let i = 0; i < length; i++) {
         result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
