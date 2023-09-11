@@ -5,7 +5,7 @@ import {FieldValue} from "N/record";
 import {record} from "N";
 
 
-type OperationType = `Create` | `Delete` | `Change Value` | `Empty` | `Error`
+type OperationType = `Create` | `Delete` | `Save` | `Change Value` | `Empty` | `Error`
 interface OperationInterface {
     details: string
     execute: (logs: string[]) => Error[] // function called to perform the operation
@@ -137,6 +137,31 @@ export class Operation extends Serializable implements OperationInterface{
         });
     }
 
+    static OperationSaveRecord(
+        details: string,
+        loadedRecord: record.Record,
+        logs: string[]
+    ): Operation {
+        function execute(): Error[] {
+            logs.push(`Saving record "${loadedRecord.type}" with id "${loadedRecord.id}"`);
+            try {
+                loadedRecord.save();
+                return [];
+            }
+            catch (e) {
+                return [Operation.OperationRaiseException(`Error during line update: ${e}`)];
+            }
+        }
+        return new Operation({
+            execute: execute,
+            operationType: `Save`,
+            recordType: String(loadedRecord.type),
+            recordId: String(loadedRecord.id),
+            valueToSet: ``,
+            details: details,
+            field: ``,
+        });
+    }
     static OperationUpdateBody(
         details: string,
         loadedRecord: record.Record | null,
