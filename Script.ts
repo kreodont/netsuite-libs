@@ -80,7 +80,7 @@ interface RunInterface {
 }
 
 
-export type ImpactedRecord = Serializable | Serializable[] | null | string| record.Record | record.ClientCurrentRecord | ScriptContext
+export type ImpactedRecord = Serializable | Serializable[] | {[id: number]: Serializable} | null | string| record.Record | record.ClientCurrentRecord | ScriptContext
 
 function checksBeforeRunWrapper(logs: string[], context: ScriptContext, initialFunction: (context: ScriptContext, logs: string[]) => string) {
     logs.push(`Script run by: ${runtime.getCurrentUser().email} (role: ${runtime.getCurrentUser().role})`);

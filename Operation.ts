@@ -1,6 +1,6 @@
 import {jsonProperty, Serializable} from 'ts-serializable';
 import "reflect-metadata";
-import {Error} from './Error';
+import {Error, errorWithException, errorWithoutExceptionButWithScriptOwnerNotification} from './Error';
 import {FieldValue} from "N/record";
 import {record} from "N";
 
@@ -80,12 +80,12 @@ export class Operation extends Serializable implements OperationInterface{
         return operation;
     }
 
-    static OperationRaiseErrorWithoutException(details: string): Operation {
-        return new Operation({details: details, operationType: `Error`, execute: () => [{details: details, stop: true, notify: true}]});
+    static OperationRaiseErrorWithoutExceptionButWithScriptOwnerNotification(details: string): Operation {
+        return new Operation({details: details, operationType: `Error`, execute: () => [errorWithoutExceptionButWithScriptOwnerNotification(details)]});
     }
 
     static OperationRaiseException(details: string): Operation {
-        return new Operation({details: details, operationType: `Error`, execute: () => [{details: details, stop: true, notify: true, throwException: true}]});
+        return new Operation({details: details, operationType: `Error`, execute: () => [errorWithException(details)]});
     }
 
     static OperationUpdateLine(
@@ -107,6 +107,7 @@ export class Operation extends Serializable implements OperationInterface{
                 let lineFound = false;
                 for (let i = 0; i < r.getLineCount({sublistId: sublistName}); i ++) {
                     const lineId = String(r.getSublistValue({sublistId: sublistName, line: i, fieldId: `lineuniquekey`}));
+                    logs.push(`Line ${i} unique id is: ${lineId}`);
                     if (lineId === uniqueLineId) {
                         lineFound = true;
                         logs.push(`Line found at position ${i + 1} (starting from 1). Setting the value`);
@@ -115,12 +116,12 @@ export class Operation extends Serializable implements OperationInterface{
                     }
                 }
                 if (!lineFound) {
-                    return [Operation.OperationRaiseErrorWithoutException(`Could not find line with lineuniquekey "${uniqueLineId}" in record "${recordType}" with id "${recordId}" sublist "${sublistName}". Most probably, it was already deleted by someone else`)];
+                    return [errorWithoutExceptionButWithScriptOwnerNotification(`Could not find line with lineuniquekey "${uniqueLineId}" in record "${recordType}" with id "${recordId}" sublist "${sublistName}". Most probably, it was already deleted by someone else`)];
                 }
                 return [];
             }
             catch (e) {
-                return [Operation.OperationRaiseException(`Error during line update: ${e}`)];
+                return [errorWithException(`Error during line update: ${e}`)];
             }
         }
 
@@ -149,7 +150,7 @@ export class Operation extends Serializable implements OperationInterface{
                 return [];
             }
             catch (e) {
-                return [Operation.OperationRaiseException(`Error during line update: ${e}`)];
+                return [errorWithException(`Error during record save: ${e}`)];
             }
         }
         return new Operation({
@@ -179,7 +180,7 @@ export class Operation extends Serializable implements OperationInterface{
                 return [];
             }
             catch (e) {
-                return [Operation.OperationRaiseException(`Error during line update: ${e}`)];
+                return [errorWithException(`Error during body update: ${e}`)];
             }
         }
 

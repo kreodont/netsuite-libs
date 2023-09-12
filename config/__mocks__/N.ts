@@ -35,7 +35,7 @@ const runtime = {
 
 const record = {
     // Add any required methods or properties of the N/record module
-    load: jest.fn(),
+    load: jest.fn().mockReturnValue('test'),
     Type: {}
 };
 
