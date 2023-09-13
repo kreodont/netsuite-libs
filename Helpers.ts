@@ -67,6 +67,7 @@ export function datesAreTheSame(d1: Date | null, d2: Date | null): boolean {
     return d1?.getFullYear() === d2?.getFullYear() && d1?.getMonth() === d2?.getMonth() && d1?.getDate() === d2?.getDate();
 }
 
+export const sqlDateTimeFormat = `YYYY-MM-DD"T"HH24:MI:SS".000Z"`;
 export function getSqlResultAsMap(
     sqlString: string,
 ): { [p: string]: string | boolean | number | null }[] {
