@@ -21,19 +21,16 @@ export function chunks<T>(inputArray: Array<T>, chunkSize: number): Array<T>[] {
     }
     return outputArray;
 }
-
 export function roundNumber(n: number, digitsAfterComma: number): number {
     return (
         Math.round(n * Math.pow(10, digitsAfterComma)) /
         Math.pow(10, digitsAfterComma)
     );
 }
-
 export function getBaseURL(): string {
     const companyId = runtime.accountId.toLowerCase().replace(/_/g, `-`);
     return `https://${companyId}.app.netsuite.com`;
 }
-
 export function fetchOneValue(sqlString: string): string | null {
     /**
      * When it is known that the result will be a single value. The value is returned as a string
@@ -51,7 +48,9 @@ export function fetchOneValue(sqlString: string): string | null {
     if (!results[0].values || results[0].values.length < 0) {
         return null;
     }
-
+    if (String(results[0].values[0]) === `null`) {
+        return null;
+    }
     return String(results[0].values[0]);
 }
 export function datesAreTheSame(d1: Date | null, d2: Date | null): boolean {
@@ -66,7 +65,6 @@ export function datesAreTheSame(d1: Date | null, d2: Date | null): boolean {
     }
     return d1?.getFullYear() === d2?.getFullYear() && d1?.getMonth() === d2?.getMonth() && d1?.getDate() === d2?.getDate();
 }
-
 export const sqlDateTimeFormat = `YYYY-MM-DD"T"HH24:MI:SS".000Z"`;
 export function getSqlResultAsMap(
     sqlString: string,
@@ -81,11 +79,9 @@ export function getSqlResultAsMap(
     }
     return [];
 }
-
 export function uniqueArray<T>(inputArray: Array<T>): Array<T> {
     return inputArray.filter((element, position) => inputArray.indexOf(element) === position);
 }
-
 export function formatAsCurrency(n: number, currencySign = `$`): string {
     const rounded = Math.round(Math.abs(n) * 100) / 100;
 
@@ -101,7 +97,6 @@ export function formatAsCurrency(n: number, currencySign = `$`): string {
     const resultString = currencySign + integerPart + `.` + decimalPart;
     return n < 0? `(${resultString})`: resultString;
 }
-
 export function generateRandomString(length: number) {
     const characters = `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789`;
     let result = ``;
@@ -110,7 +105,6 @@ export function generateRandomString(length: number) {
     }
     return result;
 }
-
 export function getDifferentParameterByIDS(
     ids: (number | null)[],
     databaseTable: string,
