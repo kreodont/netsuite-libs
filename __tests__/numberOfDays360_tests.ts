@@ -97,5 +97,16 @@ describe(`Tests for proper calculations for 360/30 (https://en.wikipedia.org/wik
     test(`Another End of February`, () => {
         expect(numberOfDays360(new Date("2020-02-28"), new Date("2023-02-27"))).toEqual(1080)
     })
-
+    test(`Issue from PBI <-> CIQ comparison`, () => {
+        expect(numberOfDays360(new Date("2019-08-01"), new Date("2024-07-30"))).toEqual(1800)
+    })
+    test(`INV1165316`, () => {
+        expect(numberOfDays360(new Date("2020-01-31"), new Date("2025-01-29"))).toEqual(1800)
+    })
+    test(`INV1284354`, () => {
+        expect(numberOfDays360(new Date("2023-06-30"), new Date("2023-07-30"))).toEqual(30)
+    })
+    test(`INV1281577`, () => {
+        expect(numberOfDays360(new Date("2023-06-23"), new Date("2023-07-23"))).toEqual(31)
+    })
 })

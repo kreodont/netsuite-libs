@@ -26,26 +26,20 @@ export function numberOfDays360(
     ) {
         return 1;
     }
-    let d1 = start.getDate();
-    let d2 = end.getDate();
-    logs?.push(`D1 is ${d1}, D2 is ${d2}`);
+    const d10 = start.getDate();
+    const d20 = end.getDate();
+    logs?.push(`D1 is ${d10}, D2 is ${d20}`);
 
-    if (isLastDayOfFebruary(end)) {
-        d2 = 30;
-    }
-    if (isLastDayOfFebruary(start) && isLastDayOfFebruary(dayjs(end).add(1, 'days').toDate())) { // since Feb 27 is also end of February for the end date
-        d1 = 30;
-        d2 = 29;
-    }
-    if (isLastDayOfFebruary(start)) {
-        d1 = 30;
-    }
-    if (d2 === 31 && d1 !== 31) {
-        d2 = 30;
-    }
+    const d21 = isLastDayOfFebruary(end) ? 30 : d20
+    const d22 = isLastDayOfFebruary(start) && isLastDayOfFebruary(dayjs(end).add(1, 'days').toDate()) ? 29 : d21
+    const d11 = isLastDayOfFebruary(start) && isLastDayOfFebruary(dayjs(end).add(1, 'days').toDate()) ? 30 : d10
+    const d12 = isLastDayOfFebruary(start) ? 30 : d11
+    const d23 = (d22 === 31 && d12 !== 31) ? 30 : d22
+    const d13 = (d12 === 31 && d22 !== 31 && d22 !== 30) ? 30 : d12
+
     const yearsDifference = end.getFullYear() - start.getFullYear();
     const monthsDifference = end.getMonth() - start.getMonth();
-    const daysDifference = d2 - d1 + 1;
+    const daysDifference = (d23 === d13 && monthsDifference === 1 && d23 === 30) ? 0: d23 - d13 + 1;
     const result =
         360 * yearsDifference + 30 * monthsDifference + daysDifference;
     logs?.push(
