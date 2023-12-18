@@ -3,9 +3,9 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 
 export default {
-    input: 'node_modules/@slack/web-api/dist/index.js',
+    input: 'node_modules/pdf-lib/cjs/index.js',
     output: {
-        file: './web-api.js',
+        file: './pdf-lib.js',
         format: 'amd', // Use AMD format for compatibility with NetSuite's module system
         sourcemap: false,
     },

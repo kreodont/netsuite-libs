@@ -27,7 +27,8 @@
     "dayjs": "^1.11.7",
     "sweetalert2": "11.4.8",
     "ts-serializable": "^3.0.44",
-    "@slack/web-api": "^6.9.0"
+    "@slack/web-api": "^6.9.0",
+    "pdf-lib": "^1.17.1"
   },
   "lint-staged": {
     "*.ts": [

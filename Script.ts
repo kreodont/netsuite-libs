@@ -315,7 +315,7 @@ export class Script extends Serializable implements ScriptInterface{
     }
 }
 
-export function notifyOwner(errorText: string, scriptId: string, attachment: File, logs?: string[]): void {
+export function notifyOwner(errorText: string, scriptId: string, attachment?: File, logs?: string[]): void {
     const sql = `select employee.id as owner_id, employee.email as owner_email, script.name as script_name from script join employee on script.owner = employee.id join file on file.id = script.scriptfile where script.scriptid = '${scriptId}'`;
     logs?.push(sql);
     const results = getSqlResultAsMap(sql);
@@ -337,7 +337,7 @@ export function notifyOwner(errorText: string, scriptId: string, attachment: Fil
             recipients: [`${ownerEmail}`],
             subject: `Script "${results[0][`script_name`]}" owner notification`,
             body: errorText,
-            attachments: [attachment],
+            attachments: attachment ? [attachment] : [],
         });
         logs?.push(`Email to ${ownerEmail} sent`);
     } catch (e) {
