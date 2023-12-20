@@ -79,9 +79,79 @@ export function getSqlResultAsMap(
     }
     return [];
 }
+
+
+export function modifySQL(initialSql: string, sortableUniqueKey: string, currentSortableKeyValue: string): string {
+    let resultString = initialSql
+    if (!initialSql.toLowerCase().includes(' where ')) { // no WHERE just adding our
+        resultString += ` where ${sortableUniqueKey} > ${currentSortableKeyValue}`
+    }
+    else { // there is WHERE already, adding our condition to it
+        const regexp0 = /where\s+(.*?)(?:from|select|group by|order by|$)/im.exec(resultString)
+        if (regexp0) {
+            const symbolsAfterWhere = regexp0[1]
+            resultString = resultString.replace(symbolsAfterWhere, symbolsAfterWhere + ` and ${sortableUniqueKey} > ${currentSortableKeyValue}`)
+        }
+    }
+
+    const regexp1 = /select\s+(.*?)from/im.exec(resultString)
+    if (regexp1) {
+        const symbolsBetweenSelectAndFrom = regexp1[1]
+        resultString = resultString.replace(symbolsBetweenSelectAndFrom, symbolsBetweenSelectAndFrom + `, ${sortableUniqueKey} `)
+
+    }
+    resultString += ` order by ${sortableUniqueKey} asc`
+    return resultString
+}
+
+export function longSQL(sql: string, sortableUniqueKey: string, logs?: string[], chunkSize: number = 5000): Record<string, string>[] | null {
+    /*
+    The function is used to bypass 5000 lines limit for the query.runSuiteQL
+    Returns stringified results, you'll have to parse your types
+    Parameter sortableUniqueKey is something we can use for ORDER BY (not necessarily to be in the request)
+    ORDER BY not supported (will be ordered only by sortableUniquekey)
+    Example: longSQL("select * from transaction", "id")
+     */
+    if (sortableUniqueKey.length === 0) {
+        logs?.push(`Sortable Unique Key must not be empty`)
+        return null
+    }
+    if (sql.toLowerCase().replace(/\s/g, '').includes('orderby')) {
+        logs?.push(`There shouldn't be ORDER BY in request`)
+        return null
+    }
+
+    let lastUniqueKey = '0';
+    const resultLines: Record<string, string>[] = [];
+    while (true) {
+        const updatedSQL = modifySQL(sql, sortableUniqueKey, lastUniqueKey)
+        logs?.push(updatedSQL)
+        const results = query.runSuiteQL({
+            query: updatedSQL,
+        });
+        const columns = results.columns
+        for (const r of results.results) {
+            const line: Record<string, string> = {}
+            for (const c of columns) {
+                line[String(c.fieldId)] = JSON.stringify(r.asMap()[String(c.fieldId)])
+            }
+            resultLines.push(line)
+        }
+        logs?.push(`${results.results.length} lines queried`)
+
+        if (results.results.length < chunkSize) {
+            break
+        }
+        lastUniqueKey = String(results.results[chunkSize - 1].asMap()[sortableUniqueKey]);
+        logs?.push(`Last ${sortableUniqueKey} was ${lastUniqueKey}`)
+    }
+    return resultLines
+}
+
 export function uniqueArray<T>(inputArray: Array<T>): Array<T> {
     return inputArray.filter((element, position) => inputArray.indexOf(element) === position);
 }
+
 export function formatAsCurrency(n: number, currencySign = `$`): string {
     const rounded = Math.round(Math.abs(n) * 100) / 100;
 
@@ -97,6 +167,7 @@ export function formatAsCurrency(n: number, currencySign = `$`): string {
     const resultString = currencySign + integerPart + `.` + decimalPart;
     return n < 0? `(${resultString})`: resultString;
 }
+
 export function generateRandomString(length: number) {
     const characters = `ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789`;
     let result = ``;
@@ -105,6 +176,7 @@ export function generateRandomString(length: number) {
     }
     return result;
 }
+
 export function getDifferentParameterByIDS(
     ids: (number | null)[],
     databaseTable: string,
