@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync, copySync  } from 'fs-extra';
+import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync} from 'fs-extra';
 import path = require('path');
 
 class ScriptObject {
@@ -289,144 +289,71 @@ function makeConfigurationFiles(): string[] {
     return []
 }
 
-export function build() {
+export function build(){
     try {
         console.log(`Running linter`);
-        execSync(`eslint --fix .eslintrc.js --ext .ts ./`);
+        execSync(`eslint --fix .eslintrc.js --ext .ts ./`, { stdio: `inherit` });
         console.log(`Linter completed\n`);
 
         console.log(`Running tests`);
-        execSync(`jest`);
+        execSync(`jest`, { stdio: `inherit` });
         console.log(`Tests completed\n`);
-
-        console.log(`Making deployment files`);
-        makeConfigurationFiles();
-        console.log(`Deployment files created\n`);
-
-        console.log(`Running rollup -c...`);
-        execSync(`rollup -c`, { stdio: `inherit` });
-        console.log(`Rollup -c completed\n`);
-
-    } catch (error) {
-        console.error(`An error occurred: ${error}`);
-    }
-}
-
-export function fixJSImports() {
-    const supportedLibs = [`dayjs.js`, `sweetalert2.js`, `ts-serializable.js`]
-    const d = `./src/FileCabinet/SuiteScripts/${path.basename(__dirname)}`
-    for (const lib of supportedLibs) {
-        copySync(`./netsuite-libs/${lib}`, `${d}/netsuite-libs/${lib}`)
-    }
-    const files = readdirSync(d);
-    const jsFiles = files
-        .filter(file => path.extname(file) === `.js`)
-    for (const f of jsFiles) {
-        console.log(`${d}/${f}`)
-        const fileContents = readFileSync(`${d}/${f}`, `utf8`)
-            .replace(/"netsuite-libs/g, '"./netsuite-libs')
-            .replace(/"dayjs"/g, '"./netsuite-libs/dayjs"')
-            .replace(/"ts-serializable"/g, '"./netsuite-libs/ts-serializable"')
-            .replace(/"sweetalert2"/g, '"./netsuite-libs/sweetalert2"')
-            .replace(/, "reflect-metadata"/g, '');
-        writeFileSync(`${d}/${f}`, fileContents);
-    }
-
-    const libFiles = readdirSync(`${d}/netsuite-libs`).filter(file => path.extname(file) === `.js`)
-    for (const f of libFiles) {
-        if (supportedLibs.indexOf(f) >= 0) {
-            continue
-        }
-        console.log(`${d}/netsuite-libs/${f}`)
-        const fileContents = readFileSync(`${d}/netsuite-libs/${f}`, `utf8`)
-            .replace(/"dayjs"/g, '"./dayjs"')
-            .replace(/"ts-serializable"/g, '"./ts-serializable"')
-            .replace(/"sweetalert2"/g, '"./sweetalert2"')
-            .replace(/, "reflect-metadata"/g, '');
-        writeFileSync(`${d}/netsuite-libs/${f}`, fileContents);
-    }
-}
-
-export function copyLibs() {
-    copySync(`./node_modules/netsuite-libs/config/.`, `./`);
-    ensureDirSync(`./netsuite-libs`);
-    copySync(`./node_modules/netsuite-libs/`, `./netsuite-libs`, { filter: f => f.endsWith(`.ts`) });
-    copySync(`./node_modules/netsuite-libs/dayjs.js`, `./netsuite-libs/dayjs.js`);
-    copySync(`./node_modules/netsuite-libs/ts-serializable.js`, `./netsuite-libs/ts-serializable.js`);
-    copySync(`./node_modules/netsuite-libs/sweetalert2.js`, `./netsuite-libs/sweetalert2.js`)
-}
-
-export function buildNoRollup(): number{
-    try {
-        console.log(`Running linter`);
-        try {
-            execSync(`eslint --fix .eslintrc.js --ext .ts ./`, { stdio: `inherit` });
-        }
-        catch {
-            return 1;
-        }
-        console.log(`Linter completed\n`);
-
-        console.log(`Running tests`);
-        try {
-            execSync(`jest`, { stdio: `inherit` });
-        }
-        catch {
-            return 1
-        }
-        console.log(`Tests completed\n`);
-
-        console.log(`Making deployment files`);
-        const errors = makeConfigurationFiles();
-        if (errors.length > 0) {
-            return 1;
-        }
-        console.log(`Deployment files created\n`);
 
         console.log(`Running tsc...`);
-        try {
-            execSync(`tsc`, { stdio: `inherit` });
-        }
-        catch {
-            return 1;
-        }
+        execSync(`tsc`, { stdio: `inherit` });
         console.log(`tsc completed\n`);
 
-        console.log(`Fixing imports...`);
-        fixJSImports();
-        console.log(`Fixing imports completed\n`);
-        return 0
+        console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs...`);
+        removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
+        console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs completed\n`);
 
     } catch (error) {
         console.error(`An error occurred: ${error}`);
-        return 1
     }
 }
 
 export function deploy() {
-    const result = buildNoRollup();
-    if (result !== 0) {
-        return result
+    console.log(`Making deployment files`);
+    const errors = makeConfigurationFiles();
+    if (errors.length > 0) {
+        return;
     }
+    console.log(`Deployment files created\n`);
+
+    console.log(`Removing extra files`);
+    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs')
+    removeFolderSync('./src/AccountConfiguration')
+    removeFolderSync('./src/Translations')
+    removeFolderSync('./src/FileCabinet/Templates')
+    removeFolderSync('./src/FileCabinet/Web Site Hosting Files')
+    console.log(`Extra files removed successfully\n`);
+
+    build();
+
+    console.log(`Running suitecloud project:adddependencies (Adds the missing dependencies to the manifest file)...`);
+    execSync(`suitecloud project:deploy`, { stdio: `inherit` });
+    console.log(`Suitecloud suitecloud project:adddependencies completed\n`);
+
+
     console.log(`Running suitecloud project:deploy...`);
     execSync(`suitecloud project:deploy`, { stdio: `inherit` });
     console.log(`Suitecloud project:deploy completed\n`);
 }
 
 export function uploadFiles() {
-    console.log(`Running tsc...`);
-    execSync(`tsc`, { stdio: `inherit` });
-    console.log(`tsc completed\n`);
-
-    console.log(`Fixing imports...`);
-    fixJSImports();
-    console.log(`Fixing imports completed\n`);
-
     const projectName = path.basename(__dirname);
     const files = readdirSync(`./src/FileCabinet/SuiteScripts/${projectName}/`).filter(f=>f.endsWith('.js'));
     if (files.length === 0) {
         return;
     }
+    console.log(`Running tests`);
+    execSync(`jest`);
+    console.log(`Tests completed\n`);
+
+    console.log(`tsc...`);
+    execSync(`tsc`, { stdio: `inherit` });
+    console.log(`tsc completed\n`);
+    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
 
     console.log(`Uploading files`);
     const uploadString = files.map(file => `"/SuiteScripts/${projectName}/${file}"`).join(` `);
