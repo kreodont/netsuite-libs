@@ -267,7 +267,7 @@ function makeConfigurationFiles(): string[] {
     const files = readdirSync(`./`);
     const tsFiles = files
         .filter(file => path.extname(file) === `.ts`)
-        .filter(file => [`deploy.ts`, `Gulpfile.ts`].indexOf(file) < 0);
+        .filter(file => [`delivery_functions.ts`, `Gulpfile.ts`].indexOf(file) < 0);
     for (const f of tsFiles) {
         const fileContents = readFileSync(f, `utf8`);
         if (fileContents.indexOf(`@NScriptType`) < 0) {
@@ -330,8 +330,11 @@ export function deploy() {
 
     build();
 
+    console.log(`Choosing account to deploy...`);
+    execSync(`suitecloud account:setup`, { stdio: `inherit` });
+
     console.log(`Running suitecloud project:adddependencies (Adds the missing dependencies to the manifest file)...`);
-    execSync(`suitecloud project:deploy`, { stdio: `inherit` });
+    execSync(`suitecloud project:adddependencies`, { stdio: `inherit` });
     console.log(`Suitecloud suitecloud project:adddependencies completed\n`);
 
 
@@ -353,7 +356,17 @@ export function uploadFiles() {
     console.log(`tsc...`);
     execSync(`tsc`, { stdio: `inherit` });
     console.log(`tsc completed\n`);
-    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
+
+    console.log(`Removing extra files`);
+    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs')
+    removeFolderSync('./src/AccountConfiguration')
+    removeFolderSync('./src/Translations')
+    removeFolderSync('./src/FileCabinet/Templates')
+    removeFolderSync('./src/FileCabinet/Web Site Hosting Files')
+    console.log(`Extra files removed successfully\n`);
+
+    console.log(`Choosing account to deploy...`);
+    execSync(`suitecloud account:setup`, { stdio: `inherit` });
 
     console.log(`Uploading files`);
     const uploadString = files.map(file => `"/SuiteScripts/${projectName}/${file}"`).join(` `);
