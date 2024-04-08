@@ -292,7 +292,7 @@ function makeConfigurationFiles(): string[] {
 export function build(){
     try {
         console.log(`Running linter`);
-        execSync(`eslint --fix .eslintrc.js --ext .ts ./`, { stdio: `inherit` });
+        execSync(`eslint --fix --ignore-pattern '!**/.eslintrc.js' --ext .ts ./`, { stdio: `inherit` });
         console.log(`Linter completed\n`);
 
         console.log(`Running tests`);
