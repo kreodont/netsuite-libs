@@ -7,6 +7,7 @@
  * @NName
  */
 
+Do not forget to remove this file from usev_script_template.ts
 
 import {EntryPoints} from "N/types";
 import {log} from "../netsuite-libs/Logger"
