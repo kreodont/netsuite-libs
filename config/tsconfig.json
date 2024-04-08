@@ -18,6 +18,5 @@
       ],
     }
   },
-  "exclude": ["__tests__", "Gulpfile.ts", "deploy.ts"],
-  "include": ["*.ts", "netsuite-libs/*.ts"]
+  "exclude": ["__tests__", "Gulpfile.ts", "deploy.ts"]
 }
