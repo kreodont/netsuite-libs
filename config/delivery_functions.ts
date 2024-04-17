@@ -259,6 +259,10 @@ function removeFolderSync(folderPath: string): void {
     }
 }
 
+/**
+ * Make configuration files.
+ * @return {string[]} The errors that occurred while making the configuration files.
+ */
 function makeConfigurationFiles(): string[] {
     const outputDirectory = `./src/FileCabinet/SuiteScripts`;
     removeFolderSync(outputDirectory);
@@ -289,7 +293,11 @@ function makeConfigurationFiles(): string[] {
     return []
 }
 
-export function build(){
+/**
+ * Build the project.
+ * @return {number} The status of the build (0 for success, 1 for failure).
+ */
+export function build(): number{
     try {
         console.log(`Running linter`);
         execSync(`eslint --fix --ignore-pattern '!**/.eslintrc.js' --ext .ts ./`, { stdio: `inherit` });
@@ -306,12 +314,17 @@ export function build(){
         console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs...`);
         removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
         console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs completed\n`);
+        return 0
 
     } catch (error) {
         console.error(`An error occurred: ${error}`);
+        return 1
     }
 }
 
+/**
+ * Deploy the project.
+ */
 export function deploy() {
     console.log(`Making deployment files`);
     const errors = makeConfigurationFiles();
@@ -328,7 +341,10 @@ export function deploy() {
     removeFolderSync('./src/FileCabinet/Web Site Hosting Files')
     console.log(`Extra files removed successfully\n`);
 
-    build();
+    const buildResult = build();
+    if (buildResult) {
+        return;
+    }
 
     console.log(`Choosing account to deploy...`);
     execSync(`suitecloud account:setup`, { stdio: `inherit` });
@@ -343,6 +359,9 @@ export function deploy() {
     console.log(`Suitecloud project:deploy completed\n`);
 }
 
+/**
+ * Upload files to the project without deploying. Linter is also omitted
+ */
 export function uploadFiles() {
     const projectName = path.basename(__dirname);
     const files = readdirSync(`./src/FileCabinet/SuiteScripts/${projectName}/`).filter(f=>f.endsWith('.js'));
