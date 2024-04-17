@@ -16,7 +16,7 @@ class ScriptObject {
     notifyowner: `T` | `F` = `T`;
     fileName: string;
     projectFolder: string;
-    get correct(): boolean {return this.errors.length === 0;}
+    // get correct(): boolean {return this.errors.length === 0;}
     errors: string[];
 
     constructor(fileText: string, fileName: string, projectFolder: string) {
@@ -39,7 +39,7 @@ class ScriptObject {
         this.name = scriptName && scriptName.length > 1 ? scriptName[1] : ``;
         if (this.name.length === 0) {
             this.name = fileName.replace(`.js`, ``);
-            // this.errors.push(`@NName tag must be specified`);
+            this.errors.push(`@NName tag must be specified`);
         }
 
         const scriptDescription = /@NDescription (.+)/.exec(fileText);
@@ -250,22 +250,22 @@ class ScriptDeployment {
     }
 }
 
-function removeFolderSync(folderPath: string): void {
+function removeFolderSync(folderPath: string): boolean {
     try {
         removeSync(folderPath);
         console.log(`Folder ${folderPath} removed successfully.`);
+        return true
     } catch (error) {
         console.error(`An error occurred while removing the folder: ${error}`);
+        return false
     }
 }
 
-/**
- * Make configuration files.
- * @return {string[]} The errors that occurred while making the configuration files.
- */
 function makeConfigurationFiles(): string[] {
     const outputDirectory = `./src/FileCabinet/SuiteScripts`;
-    removeFolderSync(outputDirectory);
+    if (!removeFolderSync(outputDirectory)) {
+        return [`Failed to remove folder ${outputDirectory}`];
+    }
     ensureDirSync(`./src/Objects/`);
     ensureDirSync(outputDirectory);
     const files = readdirSync(`./`);
@@ -293,11 +293,7 @@ function makeConfigurationFiles(): string[] {
     return []
 }
 
-/**
- * Build the project.
- * @return {number} The status of the build (0 for success, 1 for failure).
- */
-export function build(): number{
+export function build(): boolean {
     try {
         console.log(`Running linter`);
         execSync(`eslint --fix --ignore-pattern '!**/.eslintrc.js' --ext .ts ./`, { stdio: `inherit` });
@@ -314,17 +310,14 @@ export function build(): number{
         console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs...`);
         removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
         console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs completed\n`);
-        return 0
+        return true
 
     } catch (error) {
         console.error(`An error occurred: ${error}`);
-        return 1
+        return false
     }
 }
 
-/**
- * Deploy the project.
- */
 export function deploy() {
     console.log(`Making deployment files`);
     const errors = makeConfigurationFiles();
@@ -341,8 +334,7 @@ export function deploy() {
     removeFolderSync('./src/FileCabinet/Web Site Hosting Files')
     console.log(`Extra files removed successfully\n`);
 
-    const buildResult = build();
-    if (buildResult) {
+    if (!build()) {
         return;
     }
 
@@ -353,21 +345,31 @@ export function deploy() {
     execSync(`suitecloud project:adddependencies`, { stdio: `inherit` });
     console.log(`Suitecloud suitecloud project:adddependencies completed\n`);
 
+    console.log(`Uploading files`); // we need this because in case of a new script, the JS file is already added to the manifest, but it's not yet in NS File Cabinet
+    if (!uploadJSFiles()) {
+        console.log(`Failed to upload files`)
+        return;
+    }
+    console.log(`Uploading files completed\n`);
 
     console.log(`Running suitecloud project:deploy...`);
     execSync(`suitecloud project:deploy`, { stdio: `inherit` });
     console.log(`Suitecloud project:deploy completed\n`);
 }
 
-/**
- * Upload files to the project without deploying. Linter is also omitted
- */
-export function uploadFiles() {
+function uploadJSFiles(): boolean {
     const projectName = path.basename(__dirname);
     const files = readdirSync(`./src/FileCabinet/SuiteScripts/${projectName}/`).filter(f=>f.endsWith('.js'));
     if (files.length === 0) {
-        return;
+        console.log(`No files to upload`);
+        return false;
     }
+    const uploadString = files.map(file => `"/SuiteScripts/${path.basename(__dirname)}/${file}"`).join(` `);
+    execSync(`suitecloud file:upload --paths ${uploadString}`, { stdio: `inherit` });
+    return true
+}
+
+export function uploadFiles() {
     console.log(`Running tests`);
     execSync(`jest`);
     console.log(`Tests completed\n`);
@@ -388,8 +390,10 @@ export function uploadFiles() {
     execSync(`suitecloud account:setup`, { stdio: `inherit` });
 
     console.log(`Uploading files`);
-    const uploadString = files.map(file => `"/SuiteScripts/${projectName}/${file}"`).join(` `);
-    execSync(`suitecloud file:upload --paths ${uploadString}`, { stdio: `inherit` });
+    if (!uploadJSFiles()) {
+        console.log(`Failed to upload files`)
+        return;
+    }
     console.log(`Uploading files completed\n`);
 
 }
