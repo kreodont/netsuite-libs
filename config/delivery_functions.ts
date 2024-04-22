@@ -1,5 +1,5 @@
-import { execSync } from 'child_process';
-import { removeSync, ensureDirSync, readdirSync, readFileSync, writeFileSync} from 'fs-extra';
+import {execSync} from 'child_process';
+import {ensureDirSync, readdirSync, readFileSync, removeSync, writeFileSync} from 'fs-extra';
 import path = require('path');
 
 class ScriptObject {
@@ -293,6 +293,41 @@ function makeConfigurationFiles(): string[] {
     return []
 }
 
+function getUniqueOccurrences(text: string): string[] {
+    const prefixes = ['custbody', 'custentity', 'custitem', 'custcol', 'custitemnumber', 'custrecord'];
+    const regex = new RegExp(`\\b(${prefixes.join('|')})\\w*\\b`, 'g');
+    const matches = text.match(regex) || [];
+    return Array.from(new Set(matches));
+}
+
+export function addDependenciesToManifest(): boolean {
+    const tsFiles = readdirSync(`./`)
+        .filter(file => path.extname(file) === `.ts`)
+        .filter(file => [`delivery_functions.ts`].indexOf(file) < 0);
+    const customFields: string[] = []
+    for (const f of tsFiles) {
+        const fileContents = readFileSync(f, `utf8`);
+        customFields.push(...getUniqueOccurrences(fileContents))
+    }
+    // const allCustomFields = Array.from(new Set(customFields))
+
+    const manifestFileContent = readFileSync('./src/manifest.xml', 'utf8')
+    const regex = /<object>(.*?)<\/object>/g;
+    let match;
+    while ((match = regex.exec(manifestFileContent)) !== null) {
+        customFields.push(match[1]);
+    }
+
+    const resultObjects = Array.from(new Set(customFields))
+    const objectsString = resultObjects.map(result => `\t\t<object>${result}</object>`).join('\n');
+
+    // Replace the content between <objects> and </objects> with the objectsString
+    const updatedXmlData = manifestFileContent.replace(/(<objects>)[\s\S]*?(<\/objects>)/, `$1\n${objectsString}\n$2`);
+    console.log(updatedXmlData)
+    writeFileSync('./src/manifest.xml', updatedXmlData)
+    return true
+}
+
 export function build(): boolean {
     try {
         console.log(`Running linter`);
@@ -343,6 +378,7 @@ export function deploy() {
 
     console.log(`Running suitecloud project:adddependencies (Adds the missing dependencies to the manifest file)...`);
     execSync(`suitecloud project:adddependencies`, { stdio: `inherit` });
+    addDependenciesToManifest()
     console.log(`Suitecloud suitecloud project:adddependencies completed\n`);
 
     console.log(`Uploading files`); // we need this because in case of a new script, the JS file is already added to the manifest, but it's not yet in NS File Cabinet
@@ -396,4 +432,21 @@ export function uploadFiles() {
     }
     console.log(`Uploading files completed\n`);
 
+}
+
+export function quickUploadToTheSameAccount(): void {
+    console.log(`Running tsc...`);
+    execSync(`tsc`, { stdio: `inherit` });
+    console.log(`tsc completed\n`);
+
+    console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs...`);
+    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
+    console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs completed\n`);
+
+    console.log(`Uploading files`);
+    if (!uploadJSFiles()) {
+        console.log(`Failed to upload files`)
+        return;
+    }
+    console.log(`Uploading files completed\n`);
 }
