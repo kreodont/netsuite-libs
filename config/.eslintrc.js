@@ -22,7 +22,7 @@ module.exports = {
 
         'no-empty': `warn`,
         'no-cond-assign': [`error`, `always`],
-        '@typescript-eslint/no-unused-vars': `error`,
+        '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
         '@typescript-eslint/restrict-template-expressions': `off`,
 
         'for-direction': `off`,
