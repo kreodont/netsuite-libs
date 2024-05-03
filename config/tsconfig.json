@@ -18,5 +18,5 @@
       ],
     }
   },
-  "exclude": ["__tests__", "__mocks__", "Gulpfile.ts", "deploy.ts"]
+  "exclude": ["__tests__", "__mocks__", "Gulpfile.ts", "deploy.ts", "delivery_functions.ts"]
 }
