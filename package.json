@@ -25,7 +25,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@slack/web-api": "^6.9.0",
     "dayjs": "^1.11.7",
     "pdf-lib": "^1.17.1",
     "sweetalert2": "11.4.8",
