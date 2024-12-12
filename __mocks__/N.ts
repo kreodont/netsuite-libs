@@ -33,4 +33,10 @@ const runtime = {
     // Add any required methods or properties of the N/runtime module
 };
 
-export { log, query, url, email, runtime };
+const record = {
+    // Add any required methods or properties of the N/record module
+    load: jest.fn().mockReturnValue('test'),
+    Type: {INVOICE: 'invoice', SALES_ORDER: 'salesorder'},
+};
+
+export { log, query, url, email, runtime, record };
