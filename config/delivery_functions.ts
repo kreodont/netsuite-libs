@@ -80,7 +80,7 @@ class ScriptObject {
                     `RELEASED`,
                     `Script Deployment Title`,
                     `T`,
-                    e.trim().replace(/ /g, ``),
+                    e.trim().toUpperCase().replace(/ /g, ``),
                     `DEBUG`,
                     executionContext));
         }
@@ -243,12 +243,7 @@ class ScriptDeployment {
             outputString += `    <executioncontext>${this.executioncontext}</executioncontext>\n`;
         }
         if (this.recordtype) {
-            if (this.recordtype.startsWith(`customrecord`)) {
-                outputString += `    <recordtype>[scriptid=${this.recordtype}]</recordtype>\n`;
-            }
-            else {
-                outputString += `    <recordtype>${this.recordtype.toUpperCase()}</recordtype>\n`;
-            }
+            outputString += `    <recordtype>${this.recordtype}</recordtype>\n`;
         }
         outputString += `</scriptdeployment>`;
         return outputString;
@@ -267,7 +262,7 @@ function removeFolderSync(folderPath: string): boolean {
 }
 
 function makeConfigurationFiles(): string[] {
-    const outputDirectory = `./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects`;
+    const outputDirectory = `./src/FileCabinet/SuiteScripts`;
     if (!removeFolderSync(outputDirectory)) {
         return [`Failed to remove folder ${outputDirectory}`];
     }
@@ -285,7 +280,7 @@ function makeConfigurationFiles(): string[] {
         const script = new ScriptObject(
             fileContents,
             path.basename(f).replace(/ts$/, `js`),
-            `SuiteScripts/suntria_customizations/sdf_projects/${path.basename(__dirname)}`,
+            `SuiteScripts/${path.basename(__dirname)}`,
         );
         if (script.errors.length > 0) {
             for (const e of script.errors) {
@@ -347,9 +342,9 @@ export function build(): boolean {
         execSync(`tsc`, { stdio: `inherit` });
         console.log(`tsc completed\n`);
 
-        console.log(`Removing ./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects/netsuite-libs...`);
-        removeFolderSync('./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects/netsuite-libs') // to make sure netsuite-libs not deployed in NS. This is important not to re-write days.js for example
-        console.log(`Removing ./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects/netsuite-libs completed\n`);
+        console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs...`);
+        removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
+        console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs completed\n`);
         return true
 
     } catch (error) {
@@ -366,6 +361,13 @@ export function deploy() {
     }
     console.log(`Deployment files created\n`);
 
+    console.log(`Removing extra files`);
+    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs')
+    removeFolderSync('./src/AccountConfiguration')
+    removeFolderSync('./src/Translations')
+    removeFolderSync('./src/FileCabinet/Templates')
+    removeFolderSync('./src/FileCabinet/Web Site Hosting Files')
+    console.log(`Extra files removed successfully\n`);
 
     if (!build()) {
         return;
@@ -373,6 +375,11 @@ export function deploy() {
 
     console.log(`Choosing account to deploy...`);
     execSync(`suitecloud account:setup`, { stdio: `inherit` });
+
+    console.log(`Running suitecloud project:adddependencies (Adds the missing dependencies to the manifest file)...`);
+    execSync(`suitecloud project:adddependencies`, { stdio: `inherit` });
+    addDependenciesToManifest()
+    console.log(`Suitecloud suitecloud project:adddependencies completed\n`);
 
     console.log(`Uploading files`); // we need this because in case of a new script, the JS file is already added to the manifest, but it's not yet in NS File Cabinet
     if (!uploadJSFiles()) {
@@ -388,13 +395,12 @@ export function deploy() {
 
 function uploadJSFiles(): boolean {
     const projectName = path.basename(__dirname);
-    const files = readdirSync(`./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects/${projectName}/`).filter(f=>f.endsWith('.js'));
+    const files = readdirSync(`./src/FileCabinet/SuiteScripts/${projectName}/`).filter(f=>f.endsWith('.js'));
     if (files.length === 0) {
         console.log(`No files to upload`);
         return false;
     }
-    const uploadString = files.map(file => `"/SuiteScripts/suntria_customizations/sdf_projects/${path.basename(__dirname)}/${file}"`).join(` `);
-    console.log(uploadString)
+    const uploadString = files.map(file => `"/SuiteScripts/${path.basename(__dirname)}/${file}"`).join(` `);
     execSync(`suitecloud file:upload --paths ${uploadString}`, { stdio: `inherit` });
     return true
 }
@@ -407,6 +413,14 @@ export function uploadFiles() {
     console.log(`tsc...`);
     execSync(`tsc`, { stdio: `inherit` });
     console.log(`tsc completed\n`);
+
+    console.log(`Removing extra files`);
+    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs')
+    removeFolderSync('./src/AccountConfiguration')
+    removeFolderSync('./src/Translations')
+    removeFolderSync('./src/FileCabinet/Templates')
+    removeFolderSync('./src/FileCabinet/Web Site Hosting Files')
+    console.log(`Extra files removed successfully\n`);
 
     console.log(`Choosing account to deploy...`);
     execSync(`suitecloud account:setup`, { stdio: `inherit` });
@@ -425,9 +439,9 @@ export function quickUploadToTheSameAccount(): void {
     execSync(`tsc`, { stdio: `inherit` });
     console.log(`tsc completed\n`);
 
-    console.log(`Removing ./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects/netsuite-libs...`);
-    removeFolderSync('./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects/netsuite-libs') // to make sure netsuite-libs not deployed in NS. This is important not to re-write days.js for example
-    console.log(`Removing ./src/FileCabinet/SuiteScripts/suntria_customizations/sdf_projects/netsuite-libs completed\n`);
+    console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs...`);
+    removeFolderSync('./src/FileCabinet/SuiteScripts/netsuite-libs') // to make sure netsuite-libs not deployed in NS
+    console.log(`Removing ./src/FileCabinet/SuiteScripts/netsuite-libs completed\n`);
 
     console.log(`Uploading files`);
     if (!uploadJSFiles()) {
