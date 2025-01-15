@@ -338,7 +338,7 @@ export function addDependenciesToManifest(): boolean {
 export function build(): boolean {
     try {
         console.log(`Running linter`);
-        execSync(`eslint --fix --ignore-pattern '!**/.eslintrc.js' --ext .ts ./`, { stdio: `inherit` });
+        execSync(`eslint . --fix`, { stdio: `inherit` });
         console.log(`Linter completed\n`);
 
         console.log(`Running tests`);
