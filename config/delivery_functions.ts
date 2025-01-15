@@ -454,7 +454,6 @@ export function generate_tsconfig() {
     const fileCabinetPath = packageJson.file_cabinet_path || "./src/FileCabinet/SuiteScripts";
     const tsconfigPath = path.resolve(__dirname, "./tsconfig.json");
     const tsconfigString = readFileSync(tsconfigPath, "utf-8");
-    console.log(tsconfigString);
     const tsconfig = JSON.parse(tsconfigString);
     if (!tsconfig.compilerOptions) {
         tsconfig.compilerOptions = {};
