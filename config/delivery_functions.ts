@@ -16,12 +16,14 @@ class ScriptObject {
     notifyowner: `T` | `F` = `T`;
     fileName: string;
     projectFolder: string;
+    moduleImports: {moduleName: string, fileName: string}[] = [];
     // get correct(): boolean {return this.errors.length === 0;}
     errors: string[];
 
     constructor(fileText: string, fileName: string, projectFolder: string) {
         this.fileName = fileName;
         this.projectFolder = projectFolder;
+        this.moduleImports = getModuleImports(fileText, fileName);
         if (!this.projectFolder.startsWith(`/`)) {
             this.projectFolder = `/` + this.projectFolder;
         }
@@ -259,17 +261,20 @@ function removeFolderSync(folderPath: string): boolean {
     try {
         removeSync(folderPath);
         console.log(`Folder ${folderPath} removed successfully.`);
-        return true
+        return true;
     } catch (error) {
         console.error(`An error occurred while removing the folder: ${error}`);
-        return false
+        return false;
     }
 }
 
 function makeConfigurationFiles(): string[] {
     const packageJson = require("./package.json");
-    const outputDirectory = packageJson.file_cabinet_path || "./src/FileCabinet/SuiteScripts";
+    const outputDirectory = packageJson.file_cabinet_path || `./src/FileCabinet/SuiteScripts`;
     const shortOutputDirectory = outputDirectory.replace(`./src/FileCabinet/`, ``);
+    const scriptObjects = [];
+    const errors = [];
+
     if (!removeFolderSync(outputDirectory)) {
         return [`Failed to remove folder ${outputDirectory}`];
     }
@@ -291,18 +296,93 @@ function makeConfigurationFiles(): string[] {
         );
         if (script.errors.length > 0) {
             for (const e of script.errors) {
-                console.log(`${f}: ${e}`)
+                console.log(`${f}: ${e}`);
             }
             return script.errors;
         }
+        scriptObjects.push(script);
         writeFileSync(`./src/Objects/${script.scriptid}.xml`, script.xml());
     }
-    return []
+
+    for (const s of scriptObjects) {
+        if (s.type !== ScriptType.Client) {
+            continue;
+        }
+        errors.push(...checkClientScriptImports(s));
+    }
+    return errors;
+}
+
+function getModuleImports(fileText: string, fileName: string): {moduleName: string, fileName: string}[] {
+    // Parses file text and returns a list of
+    // imported modules
+    const result: {moduleName: string, fileName: string}[] = [];
+    let tokens: string[] = [];
+    const lines = fileText.split(`\n`);
+
+    for (const line of lines) {
+        if (!line.includes(`import`)) {
+            continue;
+        }
+        if (line.includes(`from`)) {
+            // for lines like: import { CommandHandler } from "./CommandHandler";
+            tokens = line.split(`from `);
+        }
+        if (line.includes(`require(`)) {
+            // for lines like: import runtime = require("N/runtime");
+            tokens = line.split(`require(`);
+        }
+        if (tokens.length === 0) { continue; }
+        let moduleName = tokens[1].replace(`;`, ``).replace(/\)/g, ``).replace(/"/g, ``).replace(/'/g, ``);
+        result.push({moduleName: moduleName, fileName: fileName});
+    }
+    return result;
+}
+
+function checkClientScriptImports (script: ScriptObject): string[] {
+    // Checks if a client script contains improper imports
+    const result: string[] = [];
+    const prohibitedImports = [`N/ui/serverWidget`];
+
+    let modulesToCheck: {moduleName: string, fileName: string}[] = [];
+    if (script.type !== ScriptType.Client) {
+        return result;
+    }
+    if (script.moduleImports.length === 0) {
+        return result;
+    }
+    // add client script imports to the list
+    modulesToCheck.push(...script.moduleImports);
+
+    while (modulesToCheck.length > 0) {
+        // get the first module name from the list
+        let module = modulesToCheck.shift();
+        if (!module) {
+            continue;
+        }
+        let moduleName = module.moduleName;
+        let fileName = module.fileName;
+        if (prohibitedImports.includes(moduleName)) {
+            let error = `Script ${script.fileName} uses prohibited module: "${moduleName}". Related script file: ${fileName}`;
+            console.error(error);
+            result.push(error);
+        }
+        if (moduleName.includes(`N/`) || moduleName === `N` || moduleName.includes(`../`)) {
+            // Skipping NS modules and external imports
+            continue;
+        }
+        // adding imports of the module to the list
+        const fileText = readFileSync(moduleName + `.ts`, `utf8`);
+        const fileImports = getModuleImports(fileText, moduleName + `.ts`);
+        modulesToCheck.push(...fileImports);
+    }
+
+    return result;
 }
 
 function getUniqueOccurrences(text: string): string[] {
-    const prefixes = ['custbody', 'custentity', 'custitem', 'custcol', 'custitemnumber', 'custrecord'];
-    const regex = new RegExp(`\\b(${prefixes.join('|')})\\w*\\b`, 'g');
+    const prefixes = [`custbody`, `custentity`, `custitem`, `custcol`, `custitemnumber`, `custrecord`];
+    const regex = new RegExp(`\\b(${prefixes.join(`|`)})\\w*\\b`, `g`);
     const matches = text.match(regex) || [];
     return Array.from(new Set(matches));
 }
@@ -311,28 +391,28 @@ export function addDependenciesToManifest(): boolean {
     const tsFiles = readdirSync(`./`)
         .filter(file => path.extname(file) === `.ts`)
         .filter(file => [`delivery_functions.ts`].indexOf(file) < 0);
-    const customFields: string[] = []
+    const customFields: string[] = [];
     for (const f of tsFiles) {
         const fileContents = readFileSync(f, `utf8`);
-        customFields.push(...getUniqueOccurrences(fileContents))
+        customFields.push(...getUniqueOccurrences(fileContents));
     }
     // const allCustomFields = Array.from(new Set(customFields))
 
-    const manifestFileContent = readFileSync('./src/manifest.xml', 'utf8')
+    const manifestFileContent = readFileSync(`./src/manifest.xml`, `utf8`);
     const regex = /<object>(.*?)<\/object>/g;
     let match;
     while ((match = regex.exec(manifestFileContent)) !== null) {
         customFields.push(match[1]);
     }
 
-    const resultObjects = Array.from(new Set(customFields))
-    const objectsString = resultObjects.map(result => `\t\t<object>${result}</object>`).join('\n');
+    const resultObjects = Array.from(new Set(customFields));
+    const objectsString = resultObjects.map(result => `\t\t<object>${result}</object>`).join(`\n`);
 
     // Replace the content between <objects> and </objects> with the objectsString
     const updatedXmlData = manifestFileContent.replace(/(<objects>)[\s\S]*?(<\/objects>)/, `$1\n${objectsString}\n$2`);
-    console.log(updatedXmlData)
-    writeFileSync('./src/manifest.xml', updatedXmlData)
-    return true
+    console.log(updatedXmlData);
+    writeFileSync(`./src/manifest.xml`, updatedXmlData);
+    return true;
 }
 
 export function build(): boolean {
@@ -349,17 +429,17 @@ export function build(): boolean {
         execSync(`tsc`, { stdio: `inherit` });
         console.log(`tsc completed\n`);
 
-        const packageJson = require("./package.json");
-        const fileCabinetPath = packageJson.file_cabinet_path || "./src/FileCabinet/SuiteScripts";
+        const packageJson = require(`./package.json`);
+        const fileCabinetPath = packageJson.file_cabinet_path || `./src/FileCabinet/SuiteScripts`;
 
         console.log(`Removing ${fileCabinetPath}/netsuite-libs...`);
-        removeFolderSync(`${fileCabinetPath}/netsuite-libs`) // to make sure netsuite-libs not deployed in NS. This is important not to re-write days.js for example
+        removeFolderSync(`${fileCabinetPath}/netsuite-libs`); // to make sure netsuite-libs not deployed in NS. This is important not to re-write days.js for example
         console.log(`Removing ${fileCabinetPath}/netsuite-libs completed\n`);
-        return true
+        return true;
 
     } catch (error) {
         console.error(`An error occurred: ${error}`);
-        return false
+        return false;
     }
 }
 
@@ -367,6 +447,7 @@ export function deploy() {
     console.log(`Making deployment files`);
     const errors = makeConfigurationFiles();
     if (errors.length > 0) {
+        console.error(`Deployment aborted. Please check errors log.`)
         return;
     }
     console.log(`Deployment files created\n`);
@@ -393,19 +474,19 @@ export function deploy() {
 
 function uploadJSFiles(): boolean {
     const projectName = path.basename(__dirname);
-    const packageJson = require("./package.json");
-    const fileCabinetPath = packageJson.file_cabinet_path || "./src/FileCabinet/SuiteScripts";
+    const packageJson = require(`./package.json`);
+    const fileCabinetPath = packageJson.file_cabinet_path || `./src/FileCabinet/SuiteScripts`;
     const shortCabinetPath = fileCabinetPath.replace(`./src/FileCabinet/`, ``);
 
-    const files = readdirSync(`${fileCabinetPath}/${projectName}/`).filter(f=>f.endsWith('.js'));
+    const files = readdirSync(`${fileCabinetPath}/${projectName}/`).filter(f=>f.endsWith(`.js`));
     if (files.length === 0) {
         console.log(`No files to upload`);
         return false;
     }
     const uploadString = files.map(file => `"/${shortCabinetPath}/${path.basename(__dirname)}/${file}"`).join(` `);
-    console.log(uploadString)
+    console.log(uploadString);
     execSync(`suitecloud file:upload --paths ${uploadString}`, { stdio: `inherit` });
-    return true
+    return true;
 }
 
 export function uploadFiles() {
@@ -422,7 +503,7 @@ export function uploadFiles() {
 
     console.log(`Uploading files`);
     if (!uploadJSFiles()) {
-        console.log(`Failed to upload files`)
+        console.log(`Failed to upload files`);
         return;
     }
     console.log(`Uploading files completed\n`);
@@ -434,26 +515,26 @@ export function quickUploadToTheSameAccount(): void {
     execSync(`tsc`, { stdio: `inherit` });
     console.log(`tsc completed\n`);
 
-    const packageJson = require("./package.json");
-    const fileCabinetPath = packageJson.file_cabinet_path || "./src/FileCabinet/SuiteScripts";
+    const packageJson = require(`./package.json`);
+    const fileCabinetPath = packageJson.file_cabinet_path || `./src/FileCabinet/SuiteScripts`;
 
     console.log(`Removing ${fileCabinetPath}/netsuite-libs...`);
-    removeFolderSync(`${fileCabinetPath}/netsuite-libs`) // to make sure netsuite-libs not deployed in NS. This is important not to re-write days.js for example
+    removeFolderSync(`${fileCabinetPath}/netsuite-libs`); // to make sure netsuite-libs not deployed in NS. This is important not to re-write days.js for example
     console.log(`Removing ${fileCabinetPath}/netsuite-libs completed\n`);
 
     console.log(`Uploading files`);
     if (!uploadJSFiles()) {
-        console.log(`Failed to upload files`)
+        console.log(`Failed to upload files`);
         return;
     }
     console.log(`Uploading files completed\n`);
 }
 
 export function generate_tsconfig() {
-    const packageJson = require("./package.json");
-    const fileCabinetPath = packageJson.file_cabinet_path || "./src/FileCabinet/SuiteScripts";
-    const tsconfigPath = path.resolve(__dirname, "./tsconfig.json");
-    const tsconfigString = readFileSync(tsconfigPath, "utf-8");
+    const packageJson = require(`./package.json`);
+    const fileCabinetPath = packageJson.file_cabinet_path || `./src/FileCabinet/SuiteScripts`;
+    const tsconfigPath = path.resolve(__dirname, `./tsconfig.json`);
+    const tsconfigString = readFileSync(tsconfigPath, `utf-8`);
     const tsconfig = JSON.parse(tsconfigString);
     if (!tsconfig.compilerOptions) {
         tsconfig.compilerOptions = {};
