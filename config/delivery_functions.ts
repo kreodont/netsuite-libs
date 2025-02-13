@@ -16,7 +16,7 @@ class ScriptObject {
     notifyowner: `T` | `F` = `T`;
     fileName: string;
     projectFolder: string;
-    moduleImports: string[][] = [];
+    moduleImports: {moduleName: string, fileName: string}[] = [];
     // get correct(): boolean {return this.errors.length === 0;}
     errors: string[];
 
@@ -313,10 +313,10 @@ function makeConfigurationFiles(): string[] {
     return errors;
 }
 
-function getModuleImports(fileText: string, fileName: string): string[][] {
+function getModuleImports(fileText: string, fileName: string): {moduleName: string, fileName: string}[] {
     // Parses file text and returns a list of
     // imported modules
-    const result: string[][] = [];
+    const result: {moduleName: string, fileName: string}[] = [];
     let tokens: string[] = [];
     const lines = fileText.split(`\n`);
 
@@ -334,8 +334,7 @@ function getModuleImports(fileText: string, fileName: string): string[][] {
         }
         if (tokens.length === 0) { continue; }
         let moduleName = tokens[1].replace(`;`, ``).replace(/\)/g, ``).replace(/"/g, ``).replace(/'/g, ``);
-        let tuple = [moduleName, fileName];
-        result.push(tuple);
+        result.push({moduleName: moduleName, fileName: fileName});
     }
     return result;
 }
@@ -343,9 +342,9 @@ function getModuleImports(fileText: string, fileName: string): string[][] {
 function checkClientScriptImports (script: ScriptObject): string[] {
     // Checks if a client script contains improper imports
     const result: string[] = [];
-    const prohibitedImports = {'N/ui/serverWidget': ``};
+    const prohibitedImports = [`N/ui/serverWidget`];
 
-    let modulesToCheck: string[][] = [];
+    let modulesToCheck: {moduleName: string, fileName: string}[] = [];
     if (script.type !== ScriptType.Client) {
         return result;
     }
@@ -357,13 +356,13 @@ function checkClientScriptImports (script: ScriptObject): string[] {
 
     while (modulesToCheck.length > 0) {
         // get the first module name from the list
-        let tuple = modulesToCheck.shift();
-        if (!tuple) {
+        let module = modulesToCheck.shift();
+        if (!module) {
             continue;
         }
-        let moduleName = tuple[0]
-        let fileName = tuple[1]
-        if (moduleName in prohibitedImports) {
+        let moduleName = module.moduleName;
+        let fileName = module.fileName;
+        if (prohibitedImports.includes(moduleName)) {
             let error = `Script ${script.fileName} uses prohibited module: "${moduleName}". Related script file: ${fileName}`;
             console.error(error);
             result.push(error);
