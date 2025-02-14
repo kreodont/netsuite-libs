@@ -116,6 +116,18 @@ class ScriptObject {
             }
 
         }
+        if (this.type === ScriptType.ScheduledScript) {
+            if (this.deployments.length !== 1) {
+                this.errors.push(`ScheduledScript script must have one empty @NDeploy tag`);
+            }
+            else if (this.deployments[0].recordtype) {
+                this.errors.push(`ScheduledScript @NDeploy tag must be empty`);
+            }
+            else {
+                const initialDeployment = this.deployments[0];
+                initialDeployment.status = `TESTING`;
+            }
+        }
 
         /*
         Numbering deployments
