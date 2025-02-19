@@ -380,6 +380,47 @@ function checkClientScriptImports (script: ScriptObject): string[] {
     return result;
 }
 
+function fileIsRootScript(fileContent: string): boolean {
+    return fileContent.indexOf(`@NScriptType`) >= 0;
+}
+
+function checkForEmptyLineAfterHeader(fileName: string, fileContent: string): string[] {
+    if (!fileIsRootScript(fileContent)) {
+        return [];
+    }
+    const headerEndPattern = /\*\/\s*$/;
+    const lines = fileContent.split('\n');
+    let headerEndIndex = -1;
+
+    // Find the end of the header
+    for (let i = 0; i < lines.length; i++) {
+        if (headerEndPattern.test(lines[i])) {
+            headerEndIndex = i;
+            break;
+        }
+    }
+
+    // Check if there is at least one empty line after the header
+    if (headerEndIndex !== -1 && (headerEndIndex + 1 >= lines.length || lines[headerEndIndex + 1].trim() !== '')) {
+        return [`There must be at least 1 empty line after the header in file "${fileName}"`];
+    }
+    return [];
+
+}
+
+export function sanityChecks(files: {[name: string]: string}, manifestContent: string): string[] {
+    /*
+    Perform sanity checks before deployment
+    Returns a list of errors
+     */
+    const errors: string[] = [];
+    for (const [fileName, fileText] of Object.entries(files)) {
+        errors.push(...checkForEmptyLineAfterHeader(fileName, fileText));
+
+    }
+    return errors;
+}
+
 function getUniqueOccurrences(text: string): string[] {
     const prefixes = [`custbody`, `custentity`, `custitem`, `custcol`, `custitemnumber`, `custrecord`];
     const regex = new RegExp(`\\b(${prefixes.join(`|`)})\\w*\\b`, `g`);
@@ -487,27 +528,6 @@ function uploadJSFiles(): boolean {
     console.log(uploadString);
     execSync(`suitecloud file:upload --paths ${uploadString}`, { stdio: `inherit` });
     return true;
-}
-
-export function uploadFiles() {
-    console.log(`Running tests`);
-    execSync(`jest`);
-    console.log(`Tests completed\n`);
-
-    console.log(`tsc...`);
-    execSync(`tsc`, { stdio: `inherit` });
-    console.log(`tsc completed\n`);
-
-    console.log(`Choosing account to deploy...`);
-    execSync(`suitecloud account:setup`, { stdio: `inherit` });
-
-    console.log(`Uploading files`);
-    if (!uploadJSFiles()) {
-        console.log(`Failed to upload files`);
-        return;
-    }
-    console.log(`Uploading files completed\n`);
-
 }
 
 export function quickUploadToTheSameAccount(): void {
