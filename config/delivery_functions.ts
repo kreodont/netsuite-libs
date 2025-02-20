@@ -370,9 +370,10 @@ function textFunctionsUsed(fileText: string): boolean {
     return false;
 }
 
-function UEScriptExitsInCreateMode(fileText: string): boolean {
+function scriptContainsCodeText(fileText: string, codeText: string): boolean  {
+    // Checks if codeText is in fileText
     const lines = fileText.replace(/ /g, ``)
-    return lines.includes(`if(context.type===context.UserEventType.CREATE){\nreturn`);
+    return lines.includes(codeText);
 }
 
 function checkClientScriptImports (script: ScriptObject): string[] {
@@ -434,7 +435,8 @@ function checkUEScriptUsesTextFunctions(fileName: string, fileContent: string): 
     if (getScriptType(fileContent) !== ScriptType.UserEventScript) {
         return [];
     }
-    if (textFunctionsUsed(fileContent) && !UEScriptExitsInCreateMode(fileContent)) {
+    const UEScriptExitsInCreateMode = scriptContainsCodeText(fileContent, `if(context.type===context.UserEventType.CREATE){\nreturn`)
+    if (textFunctionsUsed(fileContent) && !UEScriptExitsInCreateMode) {
         return[`UserEvent script "${fileName}" uses "Record.Text" functions in "context.UserEventType.CREATE" mode`];
     }
     return [];
@@ -464,6 +466,27 @@ function checkForEmptyLineAfterHeader(fileName: string, fileContent: string): st
 
 }
 
+function checkServerScriptsManifest(fileName: string, fileContent: string, manifestContent: string): string[] {
+    if (!fileIsRootScript(fileContent)) {
+        return [];
+    }
+    const scriptTypes = [
+        String(ScriptType.UserEventScript),
+        String(ScriptType.Suitelet),
+        String(ScriptType.ScheduledScript),
+        String(ScriptType.MapReduceScript)
+    ]
+    const scriptType = getScriptType(fileContent)
+    const manifestIncludesServersidescripting = scriptContainsCodeText(manifestContent, `<featurerequired="true">SERVERSIDESCRIPTING</feature>`)
+
+    if (scriptTypes.includes(scriptType) && !manifestIncludesServersidescripting) {
+        return [`Wrong manifest.xml found. For script "${fileName}" it should contain "<feature required="true">SERVERSIDESCRIPTING</feature>"`];
+    }
+
+    return []
+
+}
+
 export function sanityChecks(files: {[name: string]: string}, manifestContent: string): string[] {
     /*
     Perform sanity checks before deployment
@@ -473,6 +496,7 @@ export function sanityChecks(files: {[name: string]: string}, manifestContent: s
     for (const [fileName, fileText] of Object.entries(files)) {
         errors.push(...checkForEmptyLineAfterHeader(fileName, fileText));
         errors.push(...checkUEScriptUsesTextFunctions(fileName, fileText));
+        errors.push(...checkServerScriptsManifest(fileName, fileText, manifestContent))
 
     }
     return errors;

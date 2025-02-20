@@ -32,10 +32,20 @@ import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResul
 import {runtime} from "N";
 import {https} from "N";`,
     }
-    const errors = sanityChecks(scriptFiles, ``);
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, correctManifest);
     expect(errors).toEqual([`There must be at least 1 empty line after the header in file "wrong.ts"`]);
     delete scriptFiles['wrong.ts'];
-    expect(sanityChecks(scriptFiles, ``)).toEqual([]);
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
 
 test(`User event script should not use Record.getText (etc.) function in context.UserEventType.CREATE mode`, () => {
@@ -82,10 +92,20 @@ export function beforeSubmit(context: EntryPoints.UserEvent.beforeSubmitContext)
 
 }`,
     }
-    const errors = sanityChecks(scriptFiles, ``);
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, correctManifest);
     expect(errors).toEqual([`UserEvent script "wrong.ts" uses "Record.Text" functions in "context.UserEventType.CREATE" mode`]);
     delete scriptFiles['wrong.ts'];
-    expect(sanityChecks(scriptFiles, ``)).toEqual([]);
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
 
 test(`Manifest for server scripts (MapReduce, UserEvent, Scheduled, Suitelet) must contain '<feature required="true">SERVERSIDESCRIPTING</feature>' string`, () => {
