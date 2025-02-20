@@ -373,7 +373,8 @@ function textFunctionsUsed(fileText: string): boolean {
 function scriptContainsCodeText(fileText: string, codeText: string): boolean  {
     // Checks if codeText is in fileText
     const lines = fileText.replace(/ /g, ``)
-    return lines.includes(codeText);
+    const text = codeText.replace(/ /g, ``)
+    return lines.includes(text);
 }
 
 function checkClientScriptImports (script: ScriptObject): string[] {
@@ -477,7 +478,7 @@ function checkServerScriptsManifest(fileName: string, fileContent: string, manif
         String(ScriptType.MapReduceScript)
     ]
     const scriptType = getScriptType(fileContent)
-    const manifestIncludesServersidescripting = scriptContainsCodeText(manifestContent, `<featurerequired="true">SERVERSIDESCRIPTING</feature>`)
+    const manifestIncludesServersidescripting = scriptContainsCodeText(manifestContent, `<feature required="true">SERVERSIDESCRIPTING</feature>`)
 
     if (scriptTypes.includes(scriptType) && !manifestIncludesServersidescripting) {
         return [`Wrong manifest.xml found. For script "${fileName}" it should contain "<feature required="true">SERVERSIDESCRIPTING</feature>"`];
