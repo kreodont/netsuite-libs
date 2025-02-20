@@ -351,6 +351,30 @@ function getModuleImports(fileText: string, fileName: string): {moduleName: stri
     return result;
 }
 
+function textFunctionsUsed(fileText: string): boolean {
+    // Parses file text to check if Record.Text functions are used
+    const textFunctions = [`getText`, `setText`, `getSublistText`, `setSublistText`]
+    const lines = fileText.split(`\n`);
+
+    for (const line of lines) {
+        if (!line.includes(`Text`)) {
+            continue;
+        }
+        for (const txtFunc of textFunctions)  {
+            if (line.includes(txtFunc)) {
+                return true;
+            }
+        }
+
+    }
+    return false;
+}
+
+function UEScriptExitsInCreateMode(fileText: string): boolean {
+    const lines = fileText.replace(/ /g, ``)
+    return lines.includes(`if(context.type===context.UserEventType.CREATE){\nreturn`);
+}
+
 function checkClientScriptImports (script: ScriptObject): string[] {
     // Checks if a client script contains improper imports
     const result: string[] = [];
@@ -396,6 +420,26 @@ function fileIsRootScript(fileContent: string): boolean {
     return fileContent.indexOf(`@NScriptType`) >= 0;
 }
 
+function getScriptType(fileContent: string): string {
+    const scriptType = /@NScriptType (.+)/.exec(fileContent);
+    return scriptType && scriptType.length > 1 ? scriptType[1] as unknown as ScriptType : ScriptType.None;
+}
+
+function checkUEScriptUsesTextFunctions(fileName: string, fileContent: string): string[] {
+    // Check if UE script uses Record.getText (etc.) functions
+    // in context.UserEventType.CREATE mode
+    if (!fileIsRootScript(fileContent)) {
+        return [];
+    }
+    if (getScriptType(fileContent) !== ScriptType.UserEventScript) {
+        return [];
+    }
+    if (textFunctionsUsed(fileContent) && !UEScriptExitsInCreateMode(fileContent)) {
+        return[`UserEvent script "${fileName}" uses "Record.Text" functions in "context.UserEventType.CREATE" mode`];
+    }
+    return [];
+}
+
 function checkForEmptyLineAfterHeader(fileName: string, fileContent: string): string[] {
     if (!fileIsRootScript(fileContent)) {
         return [];
@@ -428,6 +472,7 @@ export function sanityChecks(files: {[name: string]: string}, manifestContent: s
     const errors: string[] = [];
     for (const [fileName, fileText] of Object.entries(files)) {
         errors.push(...checkForEmptyLineAfterHeader(fileName, fileText));
+        errors.push(...checkUEScriptUsesTextFunctions(fileName, fileText));
 
     }
     return errors;
