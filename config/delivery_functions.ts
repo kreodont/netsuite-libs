@@ -351,6 +351,32 @@ function getModuleImports(fileText: string, fileName: string): {moduleName: stri
     return result;
 }
 
+function getTextFunctions(fileText: string): {func: string, line: number} | null {
+    // Parses file text to check if Record.Text functions are used
+    const textFunctions = [`getText`, `setText`, `getSublistText`, `setSublistText`]
+    const lines = fileText.split(`\n`);
+
+    for (const line of lines) {
+        if (!line.includes(`Text`)) {
+            continue;
+        }
+        for (const txtFunc of textFunctions)  {
+            if (line.includes(txtFunc)) {
+                return {func: `Record.${txtFunc}`, line: lines.indexOf(line)};
+            }
+        }
+
+    }
+    return null;
+}
+
+function scriptContainsCodeText(fileText: string, codeText: string): boolean  {
+    // Checks if codeText is in fileText
+    const lines = fileText.replace(/ /g, ``)
+    const text = codeText.replace(/ /g, ``)
+    return lines.includes(text);
+}
+
 function checkClientScriptImports (script: ScriptObject): string[] {
     // Checks if a client script contains improper imports
     const result: string[] = [];
@@ -396,6 +422,28 @@ function fileIsRootScript(fileContent: string): boolean {
     return fileContent.indexOf(`@NScriptType`) >= 0;
 }
 
+function getScriptType(fileContent: string): string {
+    const scriptType = /@NScriptType (.+)/.exec(fileContent);
+    return scriptType && scriptType.length > 1 ? scriptType[1] as unknown as ScriptType : ScriptType.None;
+}
+
+function checkUEScriptUsesTextFunctions(fileName: string, fileContent: string): string[] {
+    // Check if UE script uses Record.getText (etc.) functions
+    // in context.UserEventType.CREATE mode
+    if (!fileIsRootScript(fileContent)) {
+        return [];
+    }
+    if (getScriptType(fileContent) !== ScriptType.UserEventScript) {
+        return [];
+    }
+    const UEScriptExitsInCreateMode = scriptContainsCodeText(fileContent, `if(context.type===context.UserEventType.CREATE){\nreturn`)
+    const textFunctionsUsed = getTextFunctions(fileContent)
+    if (textFunctionsUsed && !UEScriptExitsInCreateMode) {
+        return[`UserEvent script "${fileName}". Line ${textFunctionsUsed.line}. ${textFunctionsUsed.func} function used in "CREATE" mode.\nHow to fix:\nAdd "if (context.type === context.UserEventType.CREATE) {return;}" code to the beginning of the script.\n`];
+    }
+    return [];
+}
+
 function checkForEmptyLineAfterHeader(fileName: string, fileContent: string): string[] {
     if (!fileIsRootScript(fileContent)) {
         return [];
@@ -420,6 +468,27 @@ function checkForEmptyLineAfterHeader(fileName: string, fileContent: string): st
 
 }
 
+function checkServerScriptsManifest(fileName: string, fileContent: string, manifestContent: string): string[] {
+    if (!fileIsRootScript(fileContent)) {
+        return [];
+    }
+    const scriptTypes = [
+        String(ScriptType.UserEventScript),
+        String(ScriptType.Suitelet),
+        String(ScriptType.ScheduledScript),
+        String(ScriptType.MapReduceScript)
+    ]
+    const scriptType = getScriptType(fileContent)
+    const manifestIncludesServersidescripting = scriptContainsCodeText(manifestContent, `<feature required="true">SERVERSIDESCRIPTING</feature>`)
+
+    if (scriptTypes.includes(scriptType) && !manifestIncludesServersidescripting) {
+        return [`For script "${fileName}" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`];
+    }
+
+    return []
+
+}
+
 export function sanityChecks(files: {[name: string]: string}, manifestContent: string): string[] {
     /*
     Perform sanity checks before deployment
@@ -428,6 +497,8 @@ export function sanityChecks(files: {[name: string]: string}, manifestContent: s
     const errors: string[] = [];
     for (const [fileName, fileText] of Object.entries(files)) {
         errors.push(...checkForEmptyLineAfterHeader(fileName, fileText));
+        errors.push(...checkUEScriptUsesTextFunctions(fileName, fileText));
+        errors.push(...checkServerScriptsManifest(fileName, fileText, manifestContent))
 
     }
     return errors;

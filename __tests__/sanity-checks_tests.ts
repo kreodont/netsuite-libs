@@ -32,8 +32,186 @@ import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResul
 import {runtime} from "N";
 import {https} from "N";`,
     }
-    const errors = sanityChecks(scriptFiles, ``);
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, correctManifest);
     expect(errors).toEqual([`There must be at least 1 empty line after the header in file "wrong.ts"`]);
     delete scriptFiles['wrong.ts'];
-    expect(sanityChecks(scriptFiles, ``)).toEqual([]);
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
+});
+
+test(`User event script should not use Record.getText (etc.) function in context.UserEventType.CREATE mode`, () => {
+    const scriptFiles: {[name: string]: string} = {
+        'wrong_ue_script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy customer
+ * @NName Test RecordText functions
+ * @NDescription Script to check RecordText functions in Create mode
+ */
+
+import {EntryPoints} from "N/types";
+
+
+export function beforeSubmit(context: EntryPoints.UserEvent.beforeSubmitContext): void {
+
+    const customerRecord = context.newRecord;
+    customerRecord.setText({fieldId: 'referrer', text: 'Test text please ignore'})
+
+}`,
+
+        'correct_ue_script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy customer
+ * @NName Test RecordText functions
+ * @NDescription Script to check RecordText functions in Create mode
+ */
+
+import {EntryPoints} from "N/types";
+
+
+export function beforeSubmit(context: EntryPoints.UserEvent.beforeSubmitContext): void {
+    if (context.type === context.UserEventType.CREATE) {
+        return;
+    }
+
+    const customerRecord = context.newRecord;
+    customerRecord.setText({fieldId: 'referrer', text: 'Test text please ignore'})
+
+}`,
+
+        'ue_script_without_text_functions.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy customer
+ * @NName Script without RecordText functions
+ * @NDescription
+ */
+
+import {EntryPoints} from "N/types";
+}`,
+
+        'not_ue_script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType ClientScript
+ * @NModuleScope SameAccount
+ * @NName Some Client Script
+ * @NDescription Some Description
+ */
+
+
+import {currentRecord} from "N";`,
+    }
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, correctManifest);
+    expect(errors).toEqual([`UserEvent script "wrong_ue_script.ts". Line 15. Record.setText function used in "CREATE" mode.\nHow to fix:\nAdd "if (context.type === context.UserEventType.CREATE) {return;}" code to the beginning of the script.\n`]);
+    delete scriptFiles['wrong_ue_script.ts'];
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
+});
+
+test(`Manifest for server scripts (MapReduce, UserEvent, Scheduled, Suitelet) must contain '<feature required="true">SERVERSIDESCRIPTING</feature>' string`, () => {
+    const scriptFiles: {[name: string]: string} = {
+        'ue_script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Cash bot
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "./netsuite-libs/Helpers";
+import {runtime} from "N";
+import {https} from "N";`,
+
+        'mr_script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType MapReduceScript
+ * @NModuleScope SameAccount
+ * @NDeploy
+ * @NName Map Reduce To Run several commands
+ * @NDescription Parses commands and runs them
+ */
+
+import { EntryPoints } from "N/types";
+import {log} from "../netsuite-libs/Logger";
+        `,
+
+        'st_script.ts': `/**
+* @NApiVersion 2.1
+* @NScriptType Suitelet
+* @NModuleScope SameAccount
+* @NDeploy
+* @NName Run input commands Suitelet
+* @NDescription Parse and run one or several commands
+*/
+
+
+import {EntryPoints} from "N/types";
+import {Method} from "N/http";
+        `,
+
+        'sch_script.ts': `/**
+*@NApiVersion 2.1
+*@NScriptType ScheduledScript
+* @NModuleScope SameAccount
+* @NDeploy
+* @NName Some name
+* @NDescription Some description
+*/
+
+
+import {EntryPoints} from "N/types";
+import {Method} from "N/http";
+        `,
+    }
+    const wrongManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+</features>
+</dependencies>
+</manifest>`
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, wrongManifest);
+    expect(errors).toEqual([
+        `For script "ue_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
+        `For script "mr_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
+        `For script "st_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
+        `For script "sch_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
+    ]);
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
