@@ -50,7 +50,7 @@ import {https} from "N";`,
 
 test(`User event script should not use Record.getText (etc.) function in context.UserEventType.CREATE mode`, () => {
     const scriptFiles: {[name: string]: string} = {
-        'wrong.ts': `/**
+        'wrong_ue_script.ts': `/**
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
@@ -69,8 +69,7 @@ export function beforeSubmit(context: EntryPoints.UserEvent.beforeSubmitContext)
 
 }`,
 
-
-        'correct.ts': `/**
+        'correct_ue_script.ts': `/**
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
@@ -91,6 +90,29 @@ export function beforeSubmit(context: EntryPoints.UserEvent.beforeSubmitContext)
     customerRecord.setText({fieldId: 'referrer', text: 'Test text please ignore'})
 
 }`,
+
+        'ue_script_without_text_functions.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy customer
+ * @NName Script without RecordText functions
+ * @NDescription
+ */
+
+import {EntryPoints} from "N/types";
+}`,
+
+        'not_ue_script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType ClientScript
+ * @NModuleScope SameAccount
+ * @NName Some Client Script
+ * @NDescription Some Description
+ */
+
+
+import {currentRecord} from "N";`,
     }
     const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
 <projectname>TestProject</projectname>
@@ -103,8 +125,8 @@ export function beforeSubmit(context: EntryPoints.UserEvent.beforeSubmitContext)
 </manifest>`
 
     const errors = sanityChecks(scriptFiles, correctManifest);
-    expect(errors).toEqual([`UserEvent script "wrong.ts" uses "Record.Text" functions in "context.UserEventType.CREATE" mode`]);
-    delete scriptFiles['wrong.ts'];
+    expect(errors).toEqual([`UserEvent script "wrong_ue_script.ts". Line 15. Record.setText function used in "CREATE" mode.\nHow to fix:\nAdd "if (context.type === context.UserEventType.CREATE) {return;}" code to the beginning of the script.\n`]);
+    delete scriptFiles['wrong_ue_script.ts'];
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
 
@@ -186,10 +208,10 @@ import {Method} from "N/http";
 
     const errors = sanityChecks(scriptFiles, wrongManifest);
     expect(errors).toEqual([
-        `Wrong manifest.xml found. For script "ue_script.ts" it should contain "<feature required="true">SERVERSIDESCRIPTING</feature>"`,
-        `Wrong manifest.xml found. For script "mr_script.ts" it should contain "<feature required="true">SERVERSIDESCRIPTING</feature>"`,
-        `Wrong manifest.xml found. For script "st_script.ts" it should contain "<feature required="true">SERVERSIDESCRIPTING</feature>"`,
-        `Wrong manifest.xml found. For script "sch_script.ts" it should contain "<feature required="true">SERVERSIDESCRIPTING</feature>"`,
+        `For script "ue_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
+        `For script "mr_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
+        `For script "st_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
+        `For script "sch_script.ts" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`,
     ]);
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });

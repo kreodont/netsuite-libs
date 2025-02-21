@@ -351,7 +351,7 @@ function getModuleImports(fileText: string, fileName: string): {moduleName: stri
     return result;
 }
 
-function textFunctionsUsed(fileText: string): boolean {
+function getTextFunctions(fileText: string): {func: string, line: number} | null {
     // Parses file text to check if Record.Text functions are used
     const textFunctions = [`getText`, `setText`, `getSublistText`, `setSublistText`]
     const lines = fileText.split(`\n`);
@@ -362,12 +362,12 @@ function textFunctionsUsed(fileText: string): boolean {
         }
         for (const txtFunc of textFunctions)  {
             if (line.includes(txtFunc)) {
-                return true;
+                return {func: `Record.${txtFunc}`, line: lines.indexOf(line)};
             }
         }
 
     }
-    return false;
+    return null;
 }
 
 function scriptContainsCodeText(fileText: string, codeText: string): boolean  {
@@ -437,8 +437,9 @@ function checkUEScriptUsesTextFunctions(fileName: string, fileContent: string): 
         return [];
     }
     const UEScriptExitsInCreateMode = scriptContainsCodeText(fileContent, `if(context.type===context.UserEventType.CREATE){\nreturn`)
-    if (textFunctionsUsed(fileContent) && !UEScriptExitsInCreateMode) {
-        return[`UserEvent script "${fileName}" uses "Record.Text" functions in "context.UserEventType.CREATE" mode`];
+    const textFunctionsUsed = getTextFunctions(fileContent)
+    if (textFunctionsUsed && !UEScriptExitsInCreateMode) {
+        return[`UserEvent script "${fileName}". Line ${textFunctionsUsed.line}. ${textFunctionsUsed.func} function used in "CREATE" mode.\nHow to fix:\nAdd "if (context.type === context.UserEventType.CREATE) {return;}" code to the beginning of the script.\n`];
     }
     return [];
 }
@@ -481,7 +482,7 @@ function checkServerScriptsManifest(fileName: string, fileContent: string, manif
     const manifestIncludesServersidescripting = scriptContainsCodeText(manifestContent, `<feature required="true">SERVERSIDESCRIPTING</feature>`)
 
     if (scriptTypes.includes(scriptType) && !manifestIncludesServersidescripting) {
-        return [`Wrong manifest.xml found. For script "${fileName}" it should contain "<feature required="true">SERVERSIDESCRIPTING</feature>"`];
+        return [`For script "${fileName}" ./src/manifest.xml should contain "SERVERSIDESCRIPTING"`];
     }
 
     return []
