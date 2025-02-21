@@ -16,14 +16,12 @@ class ScriptObject {
     notifyowner: `T` | `F` = `T`;
     fileName: string;
     projectFolder: string;
-    moduleImports: {moduleName: string, fileName: string}[] = [];
     // get correct(): boolean {return this.errors.length === 0;}
     errors: string[];
 
     constructor(fileText: string, fileName: string, projectFolder: string) {
         this.fileName = fileName;
         this.projectFolder = projectFolder;
-        this.moduleImports = getModuleImports(fileText, fileName);
         if (!this.projectFolder.startsWith(`/`)) {
             this.projectFolder = `/` + this.projectFolder;
         }
@@ -285,7 +283,6 @@ function makeConfigurationFiles(): string[] {
     const outputDirectory = packageJson.file_cabinet_path || `./src/FileCabinet/SuiteScripts`;
     const shortOutputDirectory = outputDirectory.replace(`./src/FileCabinet/`, ``);
     const scriptObjects = [];
-    const errors = [];
 
     if (!removeFolderSync(outputDirectory)) {
         return [`Failed to remove folder ${outputDirectory}`];
@@ -316,24 +313,23 @@ function makeConfigurationFiles(): string[] {
         writeFileSync(`./src/Objects/${script.scriptid}.xml`, script.xml());
     }
 
-    for (const s of scriptObjects) {
-        if (s.type !== ScriptType.Client) {
-            continue;
-        }
-        errors.push(...checkClientScriptImports(s));
-    }
-    return errors;
+    return [];
 }
 
-function getModuleImports(fileText: string, fileName: string): {moduleName: string, fileName: string}[] {
+function getModuleImports(fileText: string, scriptName: string): {moduleName: string, scriptName: string}[] {
     // Parses file text and returns a list of
     // imported modules
-    const result: {moduleName: string, fileName: string}[] = [];
+    const result: {moduleName: string, scriptName: string}[] = [];
     let tokens: string[] = [];
     const lines = fileText.split(`\n`);
 
     for (const line of lines) {
         if (!line.includes(`import`)) {
+            continue;
+        }
+        const dryLine = line.replace(/ /g, ``)
+        if (dryLine.includes(`*@N`)) {
+            // Skipping description tags
             continue;
         }
         if (line.includes(`from`)) {
@@ -344,9 +340,11 @@ function getModuleImports(fileText: string, fileName: string): {moduleName: stri
             // for lines like: import runtime = require("N/runtime");
             tokens = line.split(`require(`);
         }
-        if (tokens.length === 0) { continue; }
+        if (tokens.length === 0) {
+            continue;
+        }
         let moduleName = tokens[1].replace(`;`, ``).replace(/\)/g, ``).replace(/"/g, ``).replace(/'/g, ``);
-        result.push({moduleName: moduleName, fileName: fileName});
+        result.push({moduleName: moduleName, scriptName: scriptName});
     }
     return result;
 }
@@ -375,47 +373,6 @@ function scriptContainsCodeText(fileText: string, codeText: string): boolean  {
     const lines = fileText.replace(/ /g, ``)
     const text = codeText.replace(/ /g, ``)
     return lines.includes(text);
-}
-
-function checkClientScriptImports (script: ScriptObject): string[] {
-    // Checks if a client script contains improper imports
-    const result: string[] = [];
-    const prohibitedImports = [`N/ui/serverWidget`];
-
-    let modulesToCheck: {moduleName: string, fileName: string}[] = [];
-    if (script.type !== ScriptType.Client) {
-        return result;
-    }
-    if (script.moduleImports.length === 0) {
-        return result;
-    }
-    // add client script imports to the list
-    modulesToCheck.push(...script.moduleImports);
-
-    while (modulesToCheck.length > 0) {
-        // get the first module name from the list
-        let module = modulesToCheck.shift();
-        if (!module) {
-            continue;
-        }
-        let moduleName = module.moduleName;
-        let fileName = module.fileName;
-        if (prohibitedImports.includes(moduleName)) {
-            let error = `Script ${script.fileName} uses prohibited module: "${moduleName}". Related script file: ${fileName}`;
-            console.error(error);
-            result.push(error);
-        }
-        if (moduleName.includes(`N/`) || moduleName === `N` || moduleName.includes(`../`)) {
-            // Skipping NS modules and external imports
-            continue;
-        }
-        // adding imports of the module to the list
-        const fileText = readFileSync(moduleName + `.ts`, `utf8`);
-        const fileImports = getModuleImports(fileText, moduleName + `.ts`);
-        modulesToCheck.push(...fileImports);
-    }
-
-    return result;
 }
 
 function fileIsRootScript(fileContent: string): boolean {
@@ -489,6 +446,61 @@ function checkServerScriptsManifest(fileName: string, fileContent: string, manif
 
 }
 
+function checkScriptName(fileName: string): string[] {
+    if (fileName.length >= 40) {
+        return [`Script's name "${fileName}" is longer than 40 symbols`]
+    }
+    return []
+}
+
+function checkClientScriptImports (fileName: string, fileContent: string, allScripts: {[name: string]: string}): string[] {
+    // Checks if a client script contains improper imports
+    if (!fileIsRootScript(fileContent)) {
+        return [];
+    }
+    if (getScriptType(fileContent) !== ScriptType.Client) {
+        return [];
+    }
+
+    const fileImports = getModuleImports(fileContent, fileName);
+    if (fileImports.length === 0) {
+        return [];
+    }
+
+    const result: string[] = [];
+    const prohibitedImports = [`N/ui/serverWidget`];
+    let modulesToCheck: {moduleName: string, scriptName: string}[] = [];
+
+
+    // add client script imports to the list
+    modulesToCheck.push(...fileImports);
+
+    while (modulesToCheck.length > 0) {
+        // get the first module name from the list
+        let module = modulesToCheck.shift();
+        if (!module) {
+            continue;
+        }
+        let moduleName = module.moduleName;
+        let scriptName = module.scriptName;
+        if (prohibitedImports.includes(moduleName)) {
+            let error = `Script "${fileName}" uses prohibited module: "${moduleName}". Related script file: ${scriptName}`;
+            result.push(error);
+        }
+        if (moduleName.includes(`N/`) || moduleName === `N` || moduleName.includes(`../`)) {
+            // Skipping NS modules and external imports
+            continue;
+        }
+        // adding imports of the module to the list
+        const name = moduleName.split(`/`).pop() + `.ts`
+        const moduleText = allScripts[name];
+        const fileImports = getModuleImports(moduleText, name);
+        modulesToCheck.push(...fileImports);
+    }
+
+    return result;
+}
+
 export function sanityChecks(files: {[name: string]: string}, manifestContent: string): string[] {
     /*
     Perform sanity checks before deployment
@@ -496,9 +508,11 @@ export function sanityChecks(files: {[name: string]: string}, manifestContent: s
      */
     const errors: string[] = [];
     for (const [fileName, fileText] of Object.entries(files)) {
+        errors.push(...checkScriptName(fileName));
         errors.push(...checkForEmptyLineAfterHeader(fileName, fileText));
         errors.push(...checkUEScriptUsesTextFunctions(fileName, fileText));
         errors.push(...checkServerScriptsManifest(fileName, fileText, manifestContent))
+        errors.push(...checkClientScriptImports(fileName, fileText, files))
 
     }
     return errors;
