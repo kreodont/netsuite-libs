@@ -218,13 +218,13 @@ import {Method} from "N/http";
 
 test(`Script's name should not be longer than 40 symbols`, () => {
     const scriptFiles: {[name: string]: string} = {
-        'wrong_and_pretty_long_name_of_a_script.ts': `/**
+        'wrong.ts': `/**
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  * @NDeploy Customer Payment
  * @NDescription Every time new payment is created, we send a message to Slack channel @collections
- * @NName Cash bot
+ * @NName This is wrong and pretty long script's name
  */
 
 import {EntryPoints} from "N/types";
@@ -233,13 +233,13 @@ import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResul
 import {runtime} from "N";
 import {https} from "N";`,
 
-        'correct_name.ts': `/**
+        'correct.ts': `/**
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
  * @NDeploy Customer Payment
  * @NDescription Every time new payment is created, we send a message to Slack channel @collections
- * @NName Cash bot
+ * @NName Short name
  */
 
 import {EntryPoints} from "N/types";
@@ -247,6 +247,13 @@ import {log} from "netsuite-libs/Logger";
 import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "./netsuite-libs/Helpers";
 import {runtime} from "N";
 import {https} from "N";`,
+
+        'ExampleModule.ts': `
+import {} from "N/ui/serverWidget";
+import {EntryPoints} from "N/types";
+import {log} from "../netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "../netsuite-libs/Helpers";
+import {runtime, https} from "N";`,
     }
     const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
 <projectname>TestProject</projectname>
@@ -259,8 +266,8 @@ import {https} from "N";`,
 </manifest>`
 
     const errors = sanityChecks(scriptFiles, correctManifest);
-    expect(errors).toEqual([`Script's name "wrong_and_pretty_long_name_of_a_script.ts" is longer than 40 symbols`]);
-    delete scriptFiles['wrong_and_pretty_long_name_of_a_script.ts'];
+    expect(errors).toEqual([`File "wrong.ts". Script's name @NName "This is wrong and pretty long script's name" is longer than 40 symbols`]);
+    delete scriptFiles['wrong.ts'];
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
 

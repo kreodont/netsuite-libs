@@ -446,10 +446,18 @@ function checkServerScriptsManifest(fileName: string, fileContent: string, manif
 
 }
 
-function checkScriptName(fileName: string): string[] {
-    if (fileName.length >= 40) {
-        return [`Script's name "${fileName}" is longer than 40 symbols`]
+function checkScriptName(fileName: string, fileText: string): string[] {
+    // Checks NS script's name length  - @NName
+    const scriptName = /@NName (.+)/.exec(fileText);
+
+    if (!scriptName) {
+        return []
     }
+    const name = scriptName[1]
+    if (name.length >= 40) {
+        return [`File "${fileName}". Script's name @NName "${name}" is longer than 40 symbols`]
+    }
+
     return []
 }
 
@@ -508,7 +516,7 @@ export function sanityChecks(files: {[name: string]: string}, manifestContent: s
      */
     const errors: string[] = [];
     for (const [fileName, fileText] of Object.entries(files)) {
-        errors.push(...checkScriptName(fileName));
+        errors.push(...checkScriptName(fileName, fileText));
         errors.push(...checkForEmptyLineAfterHeader(fileName, fileText));
         errors.push(...checkUEScriptUsesTextFunctions(fileName, fileText));
         errors.push(...checkServerScriptsManifest(fileName, fileText, manifestContent))
