@@ -215,3 +215,138 @@ import {Method} from "N/http";
     ]);
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
+
+test(`Script's name should not be longer than 40 symbols`, () => {
+    const scriptFiles: {[name: string]: string} = {
+        'wrong.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName This is wrong and pretty long script's name
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "./netsuite-libs/Helpers";
+import {runtime} from "N";
+import {https} from "N";`,
+
+        'correct.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Short name
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "./netsuite-libs/Helpers";
+import {runtime} from "N";
+import {https} from "N";`,
+
+        'ExampleModule.ts': `
+import {} from "N/ui/serverWidget";
+import {EntryPoints} from "N/types";
+import {log} from "../netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "../netsuite-libs/Helpers";
+import {runtime, https} from "N";`,
+    }
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, correctManifest);
+    expect(errors).toEqual([`File "wrong.ts". Script's name @NName "This is wrong and pretty long script's name" is longer than 40 symbols`]);
+    delete scriptFiles['wrong.ts'];
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
+});
+
+test(`Client scripts should not use improper imports`, () => {
+    const scriptFiles: {[name: string]: string} = {
+
+        'ExampleModule.ts': `
+import {} from "N/ui/serverWidget";
+import {EntryPoints} from "N/types";
+import {log} from "../netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "../netsuite-libs/Helpers";
+import {runtime, https} from "N";`,
+
+        'wrong_client_script_1.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType ClientScript
+ * @NModuleScope SameAccount
+ * @NName Run input commands client script
+ * @NDescription This client script imports 'N/ui/serverWidget'
+ */
+
+
+import {currentRecord} from "N";
+import {} from "N/ui/serverWidget";`,
+
+        'wrong_client_script_2.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType ClientScript
+ * @NModuleScope SameAccount
+ * @NName Run input commands client script
+ * @NDescription This client script imports ExampleModule from ExampleModule.ts, 'N/ui/serverWidget' imported there
+ */
+
+
+import {currentRecord} from "N";
+import ExampleModule from "./ExampleModule";`,
+
+        'correct_client_script_2.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType ClientScript
+ * @NModuleScope SameAccount
+ * @NName Run input commands client script
+ * @NDescription This script doesn't import 'N/ui/serverWidget'
+ */
+
+
+import {currentRecord} from "N";`,
+
+        'ue_script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription This UE script uses 'N/ui/serverWidget'
+ * @NName Cash bot
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "../netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "../netsuite-libs/Helpers";
+import {runtime} from "N";
+import {} from "N/ui/serverWidget";`,
+    }
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, correctManifest);
+    expect(errors).toEqual([
+        `Script "wrong_client_script_1.ts" uses prohibited module: "N/ui/serverWidget". Related script file: wrong_client_script_1.ts`,
+        `Script "wrong_client_script_2.ts" uses prohibited module: "N/ui/serverWidget". Related script file: ExampleModule.ts`,
+    ]);
+    delete scriptFiles['wrong_client_script_1.ts'];
+    delete scriptFiles['wrong_client_script_2.ts'];
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
+});
