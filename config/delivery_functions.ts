@@ -477,11 +477,13 @@ function checkFlushLogs(fileName: string, fileText: string): string[] {
     if (!fileText.includes(`createDebugLogger(`) && !fileText.includes(`writeToFile: true`)) {
         return [];
     }
-    let code = fileText
+
     const flushFunctions = countInclusions(fileText, `flushLogs()`)
-    let debugLoggerAmount = countInclusions(fileText, `createDebugLogger(`)
+    let debugLoggers = countInclusions(fileText, `createDebugLogger(`)
+    let code = fileText
     let writeFlags: number = 0
-    while (debugLoggerAmount > 0) {
+
+    while (debugLoggers > 0) {
         const start: number = code.indexOf(`createDebugLogger(`)
         const sliced = code.slice(start)
         const end: number = start + sliced.indexOf(`)`) + 1
@@ -491,7 +493,7 @@ function checkFlushLogs(fileName: string, fileText: string): string[] {
             writeFlags++;
         }
         code = code.replace(debugLoggerCode, ``);
-        debugLoggerAmount--;
+        debugLoggers--;
     }
 
     if (writeFlags !== flushFunctions) {
