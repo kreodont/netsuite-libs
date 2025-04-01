@@ -474,17 +474,25 @@ function countInclusions(text: string, substring: string): number {
 }
 
 function checkFlushLogs(fileName: string, fileText: string): string[] {
-    if (!fileText.includes(`writeToFile: true`)) {
+    if (!fileText.includes(`createDebugLogger(`) && !fileText.includes(`writeToFile: true`)) {
         return [];
     }
+    let code = fileText
+    const flushFunctions = countInclusions(fileText, `flushLogs()`)
+    let debugLoggerAmount = countInclusions(fileText, `createDebugLogger(`)
     let writeFlags: number = 0
-    const lines = fileText.split(`\n`);
-    for (const line of lines) {
-        if (line.includes(`createDebugLogger(`) && line.includes(`writeToFile: true`)) {
+    while (debugLoggerAmount > 0) {
+        const start: number = code.indexOf(`createDebugLogger(`)
+        const sliced = code.slice(start)
+        const end: number = start + sliced.indexOf(`)`) + 1
+        const debugLoggerCode = code.slice(start, end);
+
+        if (debugLoggerCode.includes(`writeToFile: true`)) {
             writeFlags++;
         }
+        code = code.replace(debugLoggerCode, ``);
+        debugLoggerAmount--;
     }
-    const flushFunctions = countInclusions(fileText, `flushLogs()`)
 
     if (writeFlags !== flushFunctions) {
         return [`File "${fileName}". Amount of 'createDebugLogger()' with 'writeToFile' option - (${writeFlags}) is not equal to 'flushLogs()' - (${flushFunctions}) in the code`];

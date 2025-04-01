@@ -367,6 +367,18 @@ import {log} from "netsuite-libs/Logger";
 
 export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
     const log = createDebugLogger({header: '', writeToFile: true});
+    ...
+    some code
+    ...
+    const log2 = createDebugLogger({
+                    header: '',
+                    writeToFile: true
+    });
+    ...
+    createDebugLogger();
+    ...
+    const log3 = createDebugLogger({header: '', writeToFile: true});
+   
 `,
 
 
@@ -429,7 +441,7 @@ function foo() {
 </manifest>`
 
     const errors = sanityChecks(scriptFiles, correctManifest);
-    expect(errors).toEqual([`File "wrong.ts". Amount of 'createDebugLogger()' with 'writeToFile' option - (1) is not equal to 'flushLogs()' - (0) in the code`]);
+    expect(errors).toEqual([`File "wrong.ts". Amount of 'createDebugLogger()' with 'writeToFile' option - (3) is not equal to 'flushLogs()' - (0) in the code`]);
     delete scriptFiles['wrong.ts'];
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
