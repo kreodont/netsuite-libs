@@ -350,3 +350,69 @@ import {} from "N/ui/serverWidget";`,
     delete scriptFiles['wrong_client_script_2.ts'];
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
+
+test(`Amount of 'createDebugLogger()' with 'writeToFile' option should be equal to 'flushLogs()' in the code`, () => {
+    const scriptFiles: {[name: string]: string} = {
+        'wrong.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Cash bot
+ */
+ 
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+
+export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
+    const log = createDebugLogger({header: '', writeToFile: true});
+`,
+
+
+        'correct.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Cash bot
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+
+export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
+    const log = createDebugLogger({header: '', writeToFile: true});
+    ...
+    flushLogs();`,
+
+
+        'without.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Cash bot
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+`
+    }
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    const errors = sanityChecks(scriptFiles, correctManifest);
+    expect(errors).toEqual([`File "wrong.ts". Amount of 'createDebugLogger()' with 'writeToFile' option - (1) is not equal to 'flushLogs()' - (0) in the code`]);
+    delete scriptFiles['wrong.ts'];
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
+});

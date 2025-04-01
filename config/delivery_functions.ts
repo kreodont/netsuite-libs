@@ -461,6 +461,32 @@ function checkScriptName(fileName: string, fileText: string): string[] {
     return []
 }
 
+function countInclusions(text: string, substring: string): number {
+    let count: number = 0;
+    let position: number = text.indexOf(substring);
+
+    while (position !== -1) {
+        count++;
+        position = text.indexOf(substring, position + 1);
+    }
+
+    return count;
+}
+
+function checkFlushLogs(fileName: string, fileText: string): string[] {
+    if (!fileText.indexOf(`writeToFile: true`)) {
+        return [];
+    }
+    const writeFlags = countInclusions(fileText, `writeToFile: true`)
+    const flushFunctions = countInclusions(fileText, `flushLogs()`)
+
+    if (writeFlags !== flushFunctions) {
+        return [`File "${fileName}". Amount of 'createDebugLogger()' with 'writeToFile' option - (${writeFlags}) is not equal to 'flushLogs()' - (${flushFunctions}) in the code`];
+    }
+
+    return [];
+}
+
 function checkClientScriptImports (fileName: string, fileContent: string, allScripts: {[name: string]: string}): string[] {
     // Checks if a client script contains improper imports
     if (!fileIsRootScript(fileContent)) {
@@ -521,7 +547,7 @@ export function sanityChecks(files: {[name: string]: string}, manifestContent: s
         errors.push(...checkUEScriptUsesTextFunctions(fileName, fileText));
         errors.push(...checkServerScriptsManifest(fileName, fileText, manifestContent))
         errors.push(...checkClientScriptImports(fileName, fileText, files))
-
+        errors.push(...checkFlushLogs(fileName, fileText))
     }
     return errors;
 }
