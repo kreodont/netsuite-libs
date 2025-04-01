@@ -474,10 +474,16 @@ function countInclusions(text: string, substring: string): number {
 }
 
 function checkFlushLogs(fileName: string, fileText: string): string[] {
-    if (!fileText.indexOf(`writeToFile: true`)) {
+    if (!fileText.includes(`writeToFile: true`)) {
         return [];
     }
-    const writeFlags = countInclusions(fileText, `writeToFile: true`)
+    let writeFlags: number = 0
+    const lines = fileText.split(`\n`);
+    for (const line of lines) {
+        if (line.includes(`createDebugLogger(`) && line.includes(`writeToFile: true`)) {
+            writeFlags++;
+        }
+    }
     const flushFunctions = countInclusions(fileText, `flushLogs()`)
 
     if (writeFlags !== flushFunctions) {

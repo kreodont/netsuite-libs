@@ -388,7 +388,7 @@ export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
     flushLogs();`,
 
 
-        'without.ts': `/**
+        'without_1.ts': `/**
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
@@ -399,7 +399,24 @@ export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
 
 import {EntryPoints} from "N/types";
 import {log} from "netsuite-libs/Logger";
-`
+`,
+        'without_2.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Cash bot
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+
+function foo() {
+    createDebugLogger();
+    const boo = someFunction({writeToFile: true});
+}
+`,
     }
     const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
 <projectname>TestProject</projectname>
