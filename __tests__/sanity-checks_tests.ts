@@ -465,3 +465,119 @@ function foo() {
     delete scriptFiles['wrong.ts'];
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
+
+test(`Manifest file should contain object tags for each custom object in the script`, () => {
+    const scriptFiles: {[name: string]: string} = {
+        'script.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Cash bot
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+import {fetchOneValue, formatAsCurrency, getDifferentParameterByIDS, getSqlResultAsMap} from "./netsuite-libs/Helpers";
+import {runtime} from "N";
+import {https} from "N";
+
+const customer: CustomerInNetsuite = existingCustomers.length > 0 ? existingCustomers[0] : {
+            socialSecurityNumber: {
+                value: String(r.custentity_social_security_number),
+                name: \`Social Security Number Encrypted\`,
+                fieldId: \`custentity_social_security_number\`
+            },
+            isperson: {
+                value: Boolean(r.isperson),
+                name: \`Company\`,
+                fieldId: \`isperson\`
+            },
+            firstname: {
+                value: String(r.firstname),
+                name: \`Name\`,
+                fieldId: \`firstname\`
+            },
+            lastname: {
+                value: String(r.lastname),
+                name: \`\`,
+                fieldId: \`lastname\`
+            },
+            custentity_home_owner_primary_email: {
+                value: String(r.custentity_home_owner_primary_email),
+                name: \`Homeowner Phone\`,
+                fieldId: \`custentity_home_owner_primary_email\`
+            },
+            custentity_home_owner_phone: {
+                value: String(r.custentity_home_owner_phone),
+                name: \`Homeowner Phone\`,
+                fieldId: \`custentity_home_owner_phone\`
+            }
+        };`,
+    }
+    const incompleteManifest = `
+<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+<objects>
+<object>custentity_home_owner_phone</object>
+</objects>
+</dependencies>
+</manifest>`;
+
+    expect(sanityChecks(scriptFiles, incompleteManifest)).toEqual([
+        `File \"script.ts\". Custom objects were used (custentity_social_security_number,custentity_home_owner_primary_email,custentity_home_owner_phone) in the code but not included in manifest.xml.
+Correct manifest.xml should look the following way:
+
+<manifest projecttype=\"ACCOUNTCUSTOMIZATION\">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required=\"true\">SERVERSIDESCRIPTING</feature>
+</features>
+<objects>
+<object>custentity_social_security_number</object>
+<object>custentity_home_owner_primary_email</object>
+<object>custentity_home_owner_phone</object>
+</objects>
+</dependencies>
+</manifest>`,
+    ]);
+
+    const manifestWithoutObjects = `
+<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+
+    expect(sanityChecks(scriptFiles, manifestWithoutObjects)).toEqual([
+        `File \"script.ts\". Custom objects were used (custentity_social_security_number,custentity_home_owner_primary_email,custentity_home_owner_phone) in the code but not included in manifest.xml.
+Correct manifest.xml should look the following way:
+
+<manifest projecttype=\"ACCOUNTCUSTOMIZATION\">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required=\"true\">SERVERSIDESCRIPTING</feature>
+</features>
+<objects>
+<object>custentity_social_security_number</object>
+<object>custentity_home_owner_primary_email</object>
+<object>custentity_home_owner_phone</object>
+</objects>
+</dependencies>
+</manifest>`,
+    ]);
+});
