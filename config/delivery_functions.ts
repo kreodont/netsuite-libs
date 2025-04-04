@@ -496,8 +496,8 @@ function checkFlushLogs(fileName: string, fileText: string): string[] {
         debugLoggers--;
     }
 
-    if (writeFlags !== flushFunctions) {
-        return [`File "${fileName}". Amount of 'createDebugLogger()' with 'writeToFile' option - (${writeFlags}) is not equal to 'flushLogs()' - (${flushFunctions}) in the code`];
+    if (flushFunctions < writeFlags) {
+        return [`File "${fileName}". Amount of 'createDebugLogger()' with 'writeToFile' option - (${writeFlags}) is greater than 'flushLogs()' - (${flushFunctions}) in the code`];
     }
 
     return [];

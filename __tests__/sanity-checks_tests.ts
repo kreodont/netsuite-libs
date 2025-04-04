@@ -351,7 +351,7 @@ import {} from "N/ui/serverWidget";`,
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
 
-test(`Amount of 'createDebugLogger()' with 'writeToFile' option should be equal to 'flushLogs()' in the code`, () => {
+test(`Amount of 'createDebugLogger()' with 'writeToFile' option should be less or equal to 'flushLogs()' in the code`, () => {
     const scriptFiles: {[name: string]: string} = {
         'wrong.ts': `/**
  * @NApiVersion 2.1
@@ -382,7 +382,7 @@ export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
 `,
 
 
-        'correct.ts': `/**
+        'correct_1.ts': `/**
  * @NApiVersion 2.1
  * @NScriptType UserEventScript
  * @NModuleScope SameAccount
@@ -399,6 +399,26 @@ export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
     ...
     flushLogs();`,
 
+        'correct_2.ts': `/**
+ * @NApiVersion 2.1
+ * @NScriptType UserEventScript
+ * @NModuleScope SameAccount
+ * @NDeploy Customer Payment
+ * @NDescription Every time new payment is created, we send a message to Slack channel @collections
+ * @NName Cash bot
+ */
+
+import {EntryPoints} from "N/types";
+import {log} from "netsuite-libs/Logger";
+
+export function onRequest(context: EntryPoints.Suitelet.onRequestContext) {
+    const log = createDebugLogger({header: '', writeToFile: true});
+    ...
+    flushLogs();
+    ...
+    some code
+    ...
+    flushLogs();`,
 
         'without_1.ts': `/**
  * @NApiVersion 2.1
@@ -441,7 +461,7 @@ function foo() {
 </manifest>`
 
     const errors = sanityChecks(scriptFiles, correctManifest);
-    expect(errors).toEqual([`File "wrong.ts". Amount of 'createDebugLogger()' with 'writeToFile' option - (3) is not equal to 'flushLogs()' - (0) in the code`]);
+    expect(errors).toEqual([`File "wrong.ts". Amount of 'createDebugLogger()' with 'writeToFile' option - (3) is greater than 'flushLogs()' - (0) in the code`]);
     delete scriptFiles['wrong.ts'];
     expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
 });
