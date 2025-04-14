@@ -479,22 +479,12 @@ function checkFlushLogs(fileName: string, fileText: string): string[] {
     }
 
     const flushFunctions = countInclusions(fileText, `flushLogs()`)
-    let debugLoggers = countInclusions(fileText, `createDebugLogger(`)
-    let code = fileText
-    let writeFlags: number = 0
-
-    while (debugLoggers > 0) {
-        const start: number = code.indexOf(`createDebugLogger(`)
-        const sliced = code.slice(start)
-        const end: number = start + sliced.indexOf(`)`) + 1
-        const debugLoggerCode = code.slice(start, end);
-
-        if (debugLoggerCode.includes(`writeToFile: true`)) {
-            writeFlags++;
-        }
-        code = code.replace(debugLoggerCode, ``);
-        debugLoggers--;
+    function countWriteToFileTrue(scriptText: string): number {
+        const regex = /createDebugLogger\s*\(\s*{[\s\S]*?writeToFile\s*:\s*true[\s\S]*?}\s*\)/g;
+        const matches = scriptText.match(regex);
+        return matches ? matches.length : 0;
     }
+    const writeFlags = countWriteToFileTrue(fileText)
 
     if (flushFunctions < writeFlags) {
         return [`File "${fileName}". Amount of 'createDebugLogger()' with 'writeToFile' option - (${writeFlags}) is greater than 'flushLogs()' - (${flushFunctions}) in the code`];
@@ -658,6 +648,25 @@ export function import_custom_objects() {
 
 export function build(): boolean {
     try {
+        console.log(`Performing sanity checks...`);
+        const tsFiles = readdirSync(`./`)
+            .filter(file => path.extname(file) === `.ts`)
+            .filter(file => [`delivery_functions.ts`].indexOf(file) < 0);
+        const tsFilesDict: {[name: string]: string} = {};
+        for (const f of tsFiles) {
+            tsFilesDict[f] = readFileSync(f, `utf8`);
+        }
+        console.log(JSON.stringify(tsFilesDict))
+        const sanityErrors = sanityChecks(tsFilesDict, readFileSync(`./src/manifest.xml`, `utf8`));
+        if(sanityErrors.length > 0) {
+            console.log(`Sanity checks failed`);
+            for (const error of sanityErrors) {
+                console.log(error);
+            }
+            return false;
+        }
+        console.log(`Sanity checks completed\n`);
+
         console.log(`Running linter`);
         execSync(`eslint . --fix`, { stdio: `inherit` });
         console.log(`Linter completed\n`);

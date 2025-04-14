@@ -581,3 +581,39 @@ Correct manifest.xml should look the following way:
 </manifest>`,
     ]);
 });
+
+test(`Another test for flush logs`, () => {
+    const scriptFiles = {"ue_coterm_button.ts": '/**\n' +
+            ' * @NApiVersion 2.1\n' +
+            ' * @NScriptType UserEventScript\n' +
+            ' * @NModuleScope SameAccount\n' +
+            ' * @NName Cotermination Button\n' +
+            ' * @NDeploy Sales Order, Customer\n' +
+            ' * @NDescription Detects if we need to show the cotermination button on the sales order or customer record\n' +
+            ' */\n' +
+            '\n' +
+            'import {EntryPoints} from "N/types";\n' +
+            'import {createDebugLogger} from "../netsuite-libs/Logger";\n' +
+            'import {buildSalesOrderFromScriptContext} from "./SalesOrder";\n' +
+            '\n' +
+            'export function beforeLoad(context: EntryPoints.UserEvent.beforeLoadContext): void {\n' +
+            '    if (context.type !== context.UserEventType.VIEW) {\n' +
+            '        // Works only in View Context\n' +
+            '        return;\n' +
+            '    }\n' +
+            '    const log = createDebugLogger({header: `${context.newRecord.getValue({fieldId: `tranid`})}`, writeToFile: true});\n' +
+            '    const salesOrder = buildSalesOrderFromScriptContext(context);\n' +
+            '    log(`Sales Order: ${JSON.stringify(salesOrder)}`);\n' +
+            '}'};
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+<projectname>TestProject</projectname>
+<frameworkversion>1.0</frameworkversion>
+<dependencies>
+<features>
+<feature required="true">SERVERSIDESCRIPTING</feature>
+</features>
+</dependencies>
+</manifest>`
+    const errors = sanityChecks(scriptFiles, correctManifest);
+    expect(errors).toEqual([`File "ue_coterm_button.ts". Amount of 'createDebugLogger()' with 'writeToFile' option - (1) is greater than 'flushLogs()' - (0) in the code`]);
+})
