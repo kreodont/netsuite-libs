@@ -3,9 +3,9 @@ import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 
 export default {
-    input: 'node_modules/exceljs/dist/exceljs.js',
+    input: 'node_modules/crypto-js/index.js',
     output: {
-        file: './exceljs.js',
+        file: './crypto-js.js',
         format: 'amd', // Use AMD format for compatibility with NetSuite's module system
         sourcemap: false,
     },

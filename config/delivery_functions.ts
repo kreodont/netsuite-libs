@@ -640,6 +640,10 @@ export function import_custom_objects() {
             const fileContents = readFileSync(f, `utf8`);
             customFields.push(...getCustomObjectNames(fileContents));
         }
+        if (customFields.length === 0) {
+            console.log(`No custom objects found, nothing to import`);
+            return true;
+        }
         console.log(`Found custom objects. Trying to download`, `\n`)
         console.log(`suitecloud object:import --type ALL --destinationfolder "/Objects" --scriptid ${customFields.join(` `)}`);
         execSync(`suitecloud object:import --type ALL --destinationfolder "/Objects" --scriptid ${customFields.join(` `)}`, { stdio: `inherit` });
