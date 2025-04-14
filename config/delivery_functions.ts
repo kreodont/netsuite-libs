@@ -656,7 +656,6 @@ export function build(): boolean {
         for (const f of tsFiles) {
             tsFilesDict[f] = readFileSync(f, `utf8`);
         }
-        console.log(JSON.stringify(tsFilesDict))
         const sanityErrors = sanityChecks(tsFilesDict, readFileSync(`./src/manifest.xml`, `utf8`));
         if(sanityErrors.length > 0) {
             console.log(`Sanity checks failed`);
