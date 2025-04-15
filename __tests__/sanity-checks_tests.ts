@@ -582,6 +582,102 @@ Correct manifest.xml should look the following way:
     ]);
 });
 
+test(`When manifest file contains all custom objects there must be no errors`, () => {
+    const scriptFiles: {[name: string]: string} = {
+        'script.ts': `import {LineItem} from "./LineItem";
+import {EntryPoints} from "N/types";
+
+export interface SalesOrder {
+    id: number;
+    name: string;
+    status: string;
+    lineItems: LineItem[];
+}
+
+export function buildSalesOrderFromScriptContext(context: EntryPoints.UserEvent.beforeLoadContext): SalesOrder {
+    const salesOrder: SalesOrder = {
+        id: Number(context.newRecord.id),
+        name: context.newRecord.getValue({fieldId: \`tranid\`}) as string,
+        status: context.newRecord.getValue({fieldId: \`status\`}) as string,
+        lineItems: [],
+    };
+
+    for (let i = 0; i < context.newRecord.getLineCount({sublistId: \`item\`}); i++) {
+        const itemId = context.newRecord.getSublistValue({
+            sublistId: \`item\`,
+            fieldId: \`item\`,
+            line: i,
+        }) as number;
+        const itemName = context.newRecord.getSublistText({ // can use getSublistText since we always work in VIEW mode
+            sublistId: \`item\`,
+            fieldId: \`item\`,
+            line: i,
+        });
+        const billingScheduleId = context.newRecord.getSublistValue({
+            sublistId: \`item\`,
+            fieldId: \`billingschedule\`,
+            line: i,
+        });
+        const billingScheduleName = context.newRecord.getSublistText({ // can use getSublistText since we always work in VIEW mode
+            sublistId: \`item\`,
+            fieldId: \`billingschedule\`,
+            line: i,
+        });
+        salesOrder.lineItems.push({
+            id: context.newRecord.getSublistValue({fieldId: \`lineuniquekey\`, sublistId: \`item\`, line: i}) as number,
+            lineNumberStartingFrom0: i,
+            itemId: itemId,
+            itemName: itemName,
+            billingSchedule: billingScheduleId ? {
+                id: Number(billingScheduleId),
+                name: billingScheduleName,
+                isPublic: !billingScheduleName.startsWith(\`CT\`)
+            } : null,
+            quantityBilled: Number(context.newRecord.getSublistValue({
+                sublistId: \`item\`,
+                fieldId: \`quantitybilled\`,
+                line: i,
+            })),
+            quantity: Number(context.newRecord.getSublistValue({
+                sublistId: \`item\`,
+                fieldId: \`quantity\`,
+                line: i,
+            })),
+            amount: Number(context.newRecord.getSublistValue({
+                sublistId: \`item\`,
+                fieldId: \`amount\`,
+                line: i,
+            })),
+            isProprietaryHardware: context.newRecord.getSublistValue({
+                sublistId: \`item\`,
+                fieldId: \`custcol_proprietaryhardware\`,
+                line: i,
+            }) as boolean,
+            isClosed: context.newRecord.getSublistValue({
+                sublistId: \`item\`,
+                fieldId: \`isclosed\`,
+                line: i,
+            }) as boolean
+        });
+    }
+
+    return salesOrder;
+}`}
+    const correctManifest = `<manifest projecttype="ACCOUNTCUSTOMIZATION">
+  <projectname>Cotermination2</projectname>
+  <frameworkversion>1.0</frameworkversion>
+  <dependencies>
+    <features>
+      <feature required="true">SERVERSIDESCRIPTING</feature>
+    </features>
+    <objects>
+      <object>custcol_proprietaryhardware</object>
+    </objects>
+  </dependencies>
+</manifest>`
+    expect(sanityChecks(scriptFiles, correctManifest)).toEqual([]);
+})
+
 test(`Another test for flush logs`, () => {
     const scriptFiles = {"ue_coterm_button.ts": '/**\n' +
             ' * @NApiVersion 2.1\n' +

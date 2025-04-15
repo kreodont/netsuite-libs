@@ -548,19 +548,22 @@ function checkManifestDependencies(fileName: string, fileText: string, manifestF
     customFields.push(...getCustomObjectNames(fileText));
 
     while ((match = regex.exec(manifestFileText)) !== null) {
-        customFields.push(match[1]);
+        if (!customFields.includes(match[1])) {
+            customFields.push(match[1]);
+        }
     }
 
-    const resultObjects = Array.from(new Set(customFields));
-    if (resultObjects.length > 0 && !manifestFileText.includes(`<objects>`)) {
+    if (customFields.length > 0 && !manifestFileText.includes(`<objects>`)) {
         manifestFileText = manifestFileText.replace(`</dependencies>`, `<objects></objects>\n</dependencies>`);
     }
-    const objectsString = resultObjects.map(result => `<object>${result}</object>`).join(`\n`);
+    const objectsString = customFields.map(result => `<object>${result}</object>`).join(`\n`);
 
     // Replace the content between <objects> and </objects> with the objectsString
     const updatedXmlData = manifestFileText.replace(/(<objects>)[\s\S]*?(<\/objects>)/, `$1\n${objectsString}\n$2`);
-    if (updatedXmlData !== manifestFileText) {
-        return [`File "${fileName}". Custom objects were used (${resultObjects}) in the code but not included in manifest.xml.\nCorrect manifest.xml should look the following way:\n${updatedXmlData}`];
+    const trimmedXmlData = updatedXmlData.replace(/\s+/g, '');
+    const trimmedManifestFileText = manifestFileText.replace(/\s+/g, '');
+    if (trimmedXmlData !== trimmedManifestFileText) {
+        return [`File "${fileName}". Custom objects were used (${customFields}) in the code but not included in manifest.xml.\nCorrect manifest.xml should look the following way:\n${updatedXmlData}`];
     }
 
     return [];
