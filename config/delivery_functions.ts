@@ -514,7 +514,6 @@ function checkClientScriptImports (fileName: string, fileContent: string, allScr
 
     // add client script imports to the list
     modulesToCheck.push(...fileImports);
-
     while (modulesToCheck.length > 0) {
         // get the first module name from the list
         let module = modulesToCheck.shift();
@@ -522,17 +521,22 @@ function checkClientScriptImports (fileName: string, fileContent: string, allScr
             continue;
         }
         let moduleName = module.moduleName;
+        if (!moduleName) {
+            continue;
+        }
         let scriptName = module.scriptName;
         if (prohibitedImports.includes(moduleName)) {
             let error = `Script "${fileName}" uses prohibited module: "${moduleName}". Related script file: ${scriptName}`;
             result.push(error);
         }
-        if (moduleName.includes(`N/`) || moduleName === `N` || moduleName.includes(`../`)) {
+        if (moduleName.includes(`N/`) || moduleName.replace(/\s+/g, ``) === `N` || moduleName.includes(`../`)) {
             // Skipping NS modules and external imports
             continue;
         }
+        moduleName = moduleName.replace(/\s+/g, ``)
         // adding imports of the module to the list
-        const name = moduleName.split(`/`).pop() + `.ts`
+        const splitName = moduleName.split(`/`);
+        const name = (splitName.pop() || '').replace(/^\.+/, '') + `.ts`;
         const moduleText = allScripts[name];
         const fileImports = getModuleImports(moduleText, name);
         modulesToCheck.push(...fileImports);
@@ -542,46 +546,63 @@ function checkClientScriptImports (fileName: string, fileContent: string, allScr
 }
 
 function checkManifestDependencies(fileName: string, fileText: string, manifestFileText: string): string[] {
-    const customFields: string[] = [];
+    // Get custom objects used in the file
+    const fileCustomObjects = getCustomObjectNames(fileText);
+    if (fileCustomObjects.length === 0) {
+        return []; // No custom objects in the file, nothing to check
+    }
+
+    // Extract objects from manifest
+    const manifestObjects: string[] = [];
     const regex = /<object>(.*?)<\/object>/g;
     let match;
-    customFields.push(...getCustomObjectNames(fileText));
-
     while ((match = regex.exec(manifestFileText)) !== null) {
-        if (!customFields.includes(match[1])) {
-            customFields.push(match[1]);
+        manifestObjects.push(match[1]);
+    }
+
+    // Check if all file custom objects are in the manifest (regardless of order)
+    const missingObjects = fileCustomObjects.filter(obj => !manifestObjects.includes(obj));
+
+    if (missingObjects.length > 0) {
+        // Some objects are missing from the manifest
+        if (!manifestFileText.includes(`<objects>`)) {
+            manifestFileText = manifestFileText.replace(`</dependencies>`, `<objects></objects>\n</dependencies>`);
         }
-    }
 
-    if (customFields.length > 0 && !manifestFileText.includes(`<objects>`)) {
-        manifestFileText = manifestFileText.replace(`</dependencies>`, `<objects></objects>\n</dependencies>`);
-    }
-    const objectsString = customFields.map(result => `<object>${result}</object>`).join(`\n`);
+        // Add missing objects to the list
+        const allObjects = Array.from(new Set([...manifestObjects, ...fileCustomObjects])).sort();
+        const objectsString = allObjects.map(result => `<object>${result}</object>`).join(`\n`);
 
-    // Replace the content between <objects> and </objects> with the objectsString
-    const updatedXmlData = manifestFileText.replace(/(<objects>)[\s\S]*?(<\/objects>)/, `$1\n${objectsString}\n$2`);
-    const trimmedXmlData = updatedXmlData.replace(/\s+/g, '');
-    const trimmedManifestFileText = manifestFileText.replace(/\s+/g, '');
-    if (trimmedXmlData !== trimmedManifestFileText) {
-        return [`File "${fileName}". Custom objects were used (${customFields}) in the code but not included in manifest.xml.\nCorrect manifest.xml should look the following way:\n${updatedXmlData}`];
+        // Create updated manifest with all objects
+        const updatedXmlData = manifestFileText.replace(/(<objects>)[\s\S]*?(<\/objects>)/, `$1\n${objectsString}\n$2`);
+
+        return [`File "${fileName}". Custom objects were used (${missingObjects}) in the code but not included in manifest.xml.\nCorrect manifest.xml should look the following way:\n${updatedXmlData}`];
     }
 
     return [];
 }
 
-export function sanityChecks(files: {[name: string]: string}, manifestContent: string): string[] {
+export function sanityChecks(files: {[name: string]: string}, manifestContent: string, log?: (s: string) => void): string[] {
     /*
     Perform sanity checks before deployment
     Returns a list of errors
      */
     const errors: string[] = [];
     for (const [fileName, fileText] of Object.entries(files)) {
+        log?.(`Checking file ${fileName}`);
+        log?.(`Checking if file has @NName tag`)
         errors.push(...checkScriptName(fileName, fileText));
+        log?.(`Checking if file has empty line after header`)
         errors.push(...checkForEmptyLineAfterHeader(fileName, fileText));
+        log?.(`Checking if file is UserEvent, it doesn't use setText in CREATE mode`)
         errors.push(...checkUEScriptUsesTextFunctions(fileName, fileText));
+        log?.(`Checking if file is Server script, the manifest.xml contains SERVERSIDESCRIPTING`)
         errors.push(...checkServerScriptsManifest(fileName, fileText, manifestContent))
+        log?.(`Checking if file is Client script, it doesn't use prohibited imports`)
         errors.push(...checkClientScriptImports(fileName, fileText, files))
+        log?.(`Checking if logs write to file, there is flushLogs() in the code`)
         errors.push(...checkFlushLogs(fileName, fileText))
+        log?.(`Checking if all custom objects are in the manifest.xml`)
         errors.push(...checkManifestDependencies(fileName, fileText, manifestContent))
     }
     return errors;
@@ -591,7 +612,7 @@ function getCustomObjectNames(text: string): string[] {
     const prefixes = [`custbody`, `custentity`, `custitem`, `custcol`, `custitemnumber`, `custrecord`];
     const regex = new RegExp(`\\b(${prefixes.join(`|`)})\\w*\\b`, `g`);
     const matches = text.match(regex) || [];
-    return Array.from(new Set(matches));
+    return Array.from(new Set(matches)).sort();
 }
 
 export function addDependenciesToManifest(): boolean {
