@@ -609,7 +609,7 @@ export function sanityChecks(files: {[name: string]: string}, manifestContent: s
 }
 
 function getCustomObjectNames(text: string): string[] {
-    const prefixes = [`custbody`, `custentity`, `custitem`, `custcol`, `custitemnumber`, `custrecord`];
+    const prefixes = [`custbody`, `custentity`, `custitem`, `custcol`, `custitemnumber`];
     const regex = new RegExp(`\\b(${prefixes.join(`|`)})\\w*\\b`, `g`);
     const matches = text.match(regex) || [];
     return Array.from(new Set(matches)).sort();
