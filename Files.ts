@@ -1,6 +1,8 @@
 import file from 'N/file';
-import {runtime} from "N";
+import {record, runtime} from "N";
+import {debug} from "N/log";
 import { fetchOneValue } from './Helpers';
+
 
 export function writeFile(
     desiredOutputFileName: string,
@@ -64,4 +66,72 @@ export function writeFile(
         `Files created: ${JSON.stringify(createdFilesIds)}`,
     );
     return createdFilesIds;
+}
+
+export function getFolderId(params: {folderName: string, parentFolderId: number}): number | null {
+    const sql = `SELECT MediaItemFolder.id FROM  MediaItemFolder WHERE ( MediaItemFolder.Parent = ${params.parentFolderId} AND MediaItemFolder.Name = '${params.folderName}')`
+    const result = fetchOneValue(sql)
+    return result ? Number(result) : null
+}
+
+export function getFileId(params: {fileName: string, parentFolderId: number}): number | null {
+    const sql = `SELECT File.id FROM  File WHERE ( File.Folder = ${params.parentFolderId} AND File.Name = '${params.fileName}' )`
+    const result = fetchOneValue(sql)
+    return result ? Number(result) : null
+}
+
+export function createFolder(params: {folderName: string, parentFolderId: number}): number | null {
+    try {
+        const newFolder = record.create({
+            type: record.Type.FOLDER
+        });
+        newFolder.setValue({fieldId: 'name', value: params.folderName})
+        newFolder.setValue({fieldId: 'parent', value: params.parentFolderId})
+
+        return newFolder.save();
+    } catch (e) {
+        return null
+    }
+}
+
+export function writeStringsToFile(fileObj: file.File, lines: string[]): boolean {
+    try {
+        for (const line of lines) {
+            fileObj.appendLine({value: line})
+        }
+        fileObj.save();
+        return true;
+    }
+    catch (e) {
+        debug({ title: `File-Exception`, details: `The following error occurred: ${e}` });
+        return false;
+    }
+}
+
+export function getFile(fileName: string, folderId: number): file.File | null {
+    // Creates file with name fileName under folder folderId if it doesn't exist
+    // file.File object loaded and returned then
+    try {
+        if (!getFileId({fileName: fileName, parentFolderId: folderId})) {
+            const fileObj = file.create({
+                name: fileName,
+                fileType: file.Type.PLAINTEXT,
+                folder: folderId
+            });
+            fileObj.save()
+        }
+    }
+    catch (e) {
+        const error = JSON.stringify(e)
+        if (!error.includes(`DUP_RCRD`)) {
+            throw e;
+        }
+        debug({ title: `File-Exception`, details: `File: ${fileName} | FolderId: ${folderId}. Encountered 'DUP_RCRD' error: ${e}` });
+        debug({ title: `File-Exception`, details: `Skipping file creation, will try to get FileId` });
+    }
+    const fileId = getFileId({fileName: fileName, parentFolderId: folderId})
+    if (!fileId) {
+        return null
+    }
+    return file.load({id: fileId})
 }
