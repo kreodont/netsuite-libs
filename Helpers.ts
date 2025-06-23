@@ -208,6 +208,44 @@ export function getDifferentParameterByIDS(
     return output;
 }
 
+export function parseTimestampToDate(timestampString: string): Date {
+    /**
+     * String format: MM/DD/YYYY HH:MM
+     */
+
+    const [datePart, _] = timestampString.split(' ');
+    const [month, day, yearNumber] = datePart.split('/').map(Number);
+
+    const year = yearNumber < 100 ? 2000 + yearNumber : yearNumber;
+
+    // Create a string in ISO format with UTC-8 timezone
+    const isoString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00.000-08:00`;
+
+    return new Date(isoString);
+
+}
+
+export function parseCSV(input: string, lineSeparator = `\n`, valuesSeparator = `,`): Array<Record<string, string | null>> {
+    const lines = input.split(lineSeparator);
+    const [firstLine, ...restOfLines] = lines;
+
+    const headers = firstLine.split(valuesSeparator).map(field => field.toLowerCase().replace(/ /g, `_`).replace(/^"|"$/g, ``));
+
+    return restOfLines.map(line => {
+        const regex = /(".*?"|[^",]+|,)(?=\s*,|\s*$)/g;
+        const data = (line.match(regex) || []).map(field => field.replace(/^"|"$/g, ``));
+        const obj: Record<string, string | null> = {};
+        headers.forEach((header, i) => {
+            let cell_value: string | null = data[i]
+            if (cell_value === valuesSeparator) {
+                cell_value = null
+            }
+            obj[header] = cell_value;
+        });
+        return obj;
+    });
+}
+
 // export function loadTransactionLineGroup(
 //     transactionsIds: number[],
 //     logs?: string[],

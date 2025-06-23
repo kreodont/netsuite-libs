@@ -135,3 +135,28 @@ export function getFile(fileName: string, folderId: number): file.File | null {
     }
     return file.load({id: fileId})
 }
+
+export function saveFileToFileCabinet(fileName: string, folderId: number, fileType: file.Type, fileContent: string): number | null {
+    // Creates file with name fileName under folder folderId if it doesn't exist
+    // returns fileId
+    try {
+        const fileObj = file.create({
+            name: fileName,
+            fileType: fileType,
+            contents: fileContent,
+            folder: folderId
+        });
+        return fileObj.save()
+
+    }
+    catch (e) {
+        const error = JSON.stringify(e)
+        if (error.includes(`DUP_RCRD`)) {
+            debug({ title: `File-Exception`, details: `File: ${fileName} | FolderId: ${folderId}. Encountered 'DUP_RCRD' error: ${e}` });
+            debug({ title: `File-Exception`, details: `Skipping file creation` });
+            return null;
+        }
+        debug({ title: `File-Exception`, details: `File: ${fileName} | FolderId: ${folderId}. The following exception occurred during file creation: ${error}` });
+        return null;
+    }
+}
