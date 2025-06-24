@@ -1,14 +1,7 @@
-import dayjs from 'dayjs';
-
 function isLastDayOfFebruary(date: Date): boolean {
-    return (
-        dayjs(date)
-            .add(1, 'days')
-            .date() === 1 &&
-        dayjs(date)
-            .add(1, 'days')
-            .month() === 2
-    );
+    const nextDay = new Date(date);
+    nextDay.setDate(nextDay.getDate() + 1);
+    return nextDay.getDate() === 1 && nextDay.getMonth() === 2;
 }
 export function numberOfDays360(
     start: Date,
@@ -31,8 +24,10 @@ export function numberOfDays360(
     logs?.push(`D1 is ${d10}, D2 is ${d20}`);
 
     const d21 = isLastDayOfFebruary(end) ? 30 : d20
-    const d22 = isLastDayOfFebruary(start) && isLastDayOfFebruary(dayjs(end).add(1, 'days').toDate()) ? 29 : d21
-    const d11 = isLastDayOfFebruary(start) && isLastDayOfFebruary(dayjs(end).add(1, 'days').toDate()) ? 30 : d10
+    const endPlusOne = new Date(end);
+    endPlusOne.setDate(endPlusOne.getDate() + 1);
+    const d22 = isLastDayOfFebruary(start) && isLastDayOfFebruary(endPlusOne) ? 29 : d21
+    const d11 = isLastDayOfFebruary(start) && isLastDayOfFebruary(endPlusOne) ? 30 : d10
     const d12 = isLastDayOfFebruary(start) ? 30 : d11
     const d23 = (d22 === 31 && d12 !== 31) ? 30 : d22
     const d13 = (d12 === 31 && d22 !== 31 && d22 !== 30) ? 30 : d12
